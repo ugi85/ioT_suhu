@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IoT EcoSense - Realtime Monitoring Suhu & Kelembaban</title>
+  <title>IoT EcoSense - Multi-Room Realtime Monitoring System</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -106,12 +106,12 @@
               <span>IoT EcoSense</span>
             </h1>
             <span
-              class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">ESP32-S3</span>
+              class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">Multi-Room</span>
           </div>
           <div class="flex items-center space-x-2 text-[11px] text-slate-400">
             <span id="navLiveClock" class="font-mono text-slate-300">--:--:-- WIB</span>
             <span>&bull;</span>
-            <span class="hidden sm:inline">Google Spreadsheet Database</span>
+            <span id="navDeviceCountBadge" class="text-teal-400 font-semibold">1 Ruangan Aktif</span>
           </div>
         </div>
       </div>
@@ -119,36 +119,38 @@
       <!-- Live Controls & Quick Actions -->
       <div class="flex items-center space-x-2 sm:space-x-3">
 
-        <!-- Connection Status Pill -->
-        <div id="connectionPill"
-          class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/90 border border-slate-700/80 text-xs shadow-inner">
+        <!-- Live Connection Status Pill -->
+        <div id="connectionStatusPill"
+          class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs">
           <span class="relative flex h-2.5 w-2.5">
-            <span id="connectionDotRing"
-              class="pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-            <span id="connectionDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400"></span>
+            <span id="statusPulseRing"
+              class="pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span id="statusPulseDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </span>
-          <span id="connectionText" class="font-semibold text-slate-200 text-[11px] sm:text-xs">Menghubungkan...</span>
+          <span id="connectionStatusText" class="font-medium text-slate-300 text-[11px]">Terkoneksi (Live)</span>
         </div>
 
-        <!-- Sync Countdown -->
-        <div
-          class="hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300">
+        <!-- Sync Countdown Badge -->
+        <div id="syncCountdownBadge"
+          class="hidden md:flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-[11px] text-slate-400 font-mono"
+          title="Waktu menuju polling data berikutnya">
           <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span class="text-[11px]">Sync: <strong id="countdownSec" class="text-teal-400 font-mono">10s</strong></span>
+          <span id="countdownSecondsText">30s</span>
         </div>
 
-        <!-- Pause / Resume -->
+        <!-- Pause / Resume Button -->
         <button id="btnPauseResume"
-          class="p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
-          title="Jeda / Lanjutkan Auto-Refresh">
+          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+          title="Jeda / Lanjutkan Auto Refresh">
           <svg id="iconPause" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <svg id="iconPlay" class="w-4 h-4 hidden text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg id="iconPlay" class="w-4 h-4 hidden text-emerald-400" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -156,26 +158,34 @@
           </svg>
         </button>
 
-        <!-- Refresh Manual -->
+        <!-- Manual Refresh Button -->
         <button id="btnManualRefresh"
-          class="p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
-          title="Refresh Sekarang">
+          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+          title="Refresh Data Sekarang">
           <svg id="iconRefresh" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
 
-        <!-- Konfigurasi Dialog Button -->
+        <!-- Kelola Ruangan & Alat Button (Highlighted Action) -->
+        <button id="btnOpenDeviceManager"
+          class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-md shadow-teal-700/20 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <span>Kelola Ruangan</span>
+        </button>
+
+        <!-- Settings Modal Button -->
         <button id="btnOpenSettings"
-          class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs shadow-lg shadow-teal-700/25 transition">
+          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+          title="Pengaturan API & Batas Ambang">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span class="hidden sm:inline">Konfigurasi</span>
         </button>
 
       </div>
@@ -183,205 +193,256 @@
   </header>
 
   <!-- ===================================================================== -->
-  <!-- ALERT BANNER CONTAINER -->
+  <!-- 2. ROOM SWITCHER & SUB-NAVIGATION -->
   <!-- ===================================================================== -->
-  <div id="alertBannerContainer" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 space-y-2.5">
-    <!-- Threshold Warning Banner -->
-    <div id="thresholdWarningBanner"
-      class="hidden p-4 rounded-2xl bg-rose-500/15 border border-rose-500/40 flex items-center justify-between text-rose-200 text-sm shadow-glow-rose transition animate-pulse">
-      <div class="flex items-center space-x-3">
-        <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <div>
-          <span class="font-bold text-white block">PERINGATAN AMBANG BATAS TERPICU!</span>
-          <span id="thresholdWarningText" class="text-xs text-rose-300">Nilai telemetri melewati ambang batas normal
-            yang ditetapkan.</span>
+  <section class="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-2.5">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+
+      <!-- Room Tabs / Selector -->
+      <div class="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0 text-xs">
+        <span class="text-slate-400 font-semibold whitespace-nowrap hidden md:inline">Tampilan Ruangan:</span>
+
+        <!-- Tab: Semua Ruangan (Overview Grid) -->
+        <button onclick="selectRoom('all')" id="tabRoom_all"
+          class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 whitespace-nowrap shadow-sm">
+          <span>🏢</span>
+          <span>Semua Ruangan</span>
+          <span id="badgeAllRoomCount" class="px-1.5 py-0.2 bg-teal-400/20 rounded-full text-[10px]">1</span>
+        </button>
+
+        <!-- Dynamic Device / Room Pills Generated via JS -->
+        <div id="dynamicRoomTabs" class="flex items-center space-x-2">
+          <!-- e.g. Ruang Server, Ruang Lab, Ruang Kantor -->
         </div>
       </div>
-      <button onclick="document.getElementById('thresholdWarningBanner').classList.add('hidden')"
-        class="p-1 rounded-lg text-rose-400 hover:text-white hover:bg-rose-500/20 transition">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+      <!-- Quick Room Actions -->
+      <div class="flex items-center space-x-2 text-xs">
+        <span id="activeRoomIndicator" class="text-slate-400">Mode: <strong class="text-white">Overview Semua
+            Ruangan</strong></span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- 3. TOP GLOBAL ALERT BANNER -->
+  <!-- ===================================================================== -->
+  <div id="globalAlertBanner" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full">
+    <div
+      class="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between text-rose-300 text-xs sm:text-sm shadow-glow-rose">
+      <div class="flex items-center space-x-2.5">
+        <span class="flex h-3 w-3 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+        </span>
+        <span id="globalAlertMessage" class="font-bold">PERINGATAN SUHU TINGGI TERDETEKSI!</span>
+      </div>
+      <button onclick="dismissAlertBanner()" class="text-rose-400 hover:text-white p-1 rounded-lg">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
-
-    <!-- Demo Mode Active Notice -->
-    <div id="demoModeBanner"
-      class="hidden p-3.5 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-between text-indigo-200 text-xs shadow-lg">
-      <div class="flex items-center space-x-2.5">
-        <span
-          class="px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 font-bold uppercase tracking-wider text-[10px]">Demo
-          Mode</span>
-        <span>Menampilkan data simulasi acak. Sambungkan ke URL Web App Google Apps Script untuk data riil.</span>
-      </div>
-      <button onclick="disableDemoMode()"
-        class="px-3 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 font-semibold transition ml-3">Matikan
-        Demo</button>
-    </div>
   </div>
 
   <!-- ===================================================================== -->
-  <!-- MAIN DASHBOARD CONTENT -->
+  <!-- 4. MAIN CONTENT AREA -->
   <!-- ===================================================================== -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-grow w-full">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-6">
 
-    <!-- 1. LIVE CARDS GRID (4 METRIC CARDS) -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-
-      <!-- CARD 1: SUHU TERKINI -->
-      <div id="cardTemp"
-        class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl transition-all duration-300 relative overflow-hidden group">
-        <div
-          class="absolute -right-6 -bottom-6 w-28 h-28 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition">
+    <!-- A. VIEW MODE: OVERVIEW MULTI-ROOM GRID (Saat "Semua Ruangan" Dipilih) -->
+    <div id="multiRoomOverviewSection" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+            <span>Ringkasan Monitoring Multi-Ruangan</span>
+            <span
+              class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-teal-400 border border-slate-700">Live
+              Status</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Pemantauan kondisi alat pada masing-masing ruangan
+            secara bersamaan</p>
         </div>
-        <div class="flex items-center justify-between text-slate-400 mb-3">
-          <span class="text-xs font-bold uppercase tracking-wider">Suhu Terkini</span>
-          <div
-            class="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center border border-orange-500/20">
+      </div>
+
+      <!-- Responsive Grid for Room Cards -->
+      <div id="multiRoomGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered dynamically by renderMultiRoomGrid() -->
+      </div>
+    </div>
+
+    <!-- B. VIEW MODE: DETAIL RUANGAN TERTENTU (Saat 1 Ruangan Dipilih) -->
+    <div id="singleRoomDetailSection" class="hidden space-y-6">
+
+      <!-- Detail Header Bar -->
+      <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-900 border border-slate-800">
+        <div class="flex items-center space-x-3">
+          <button onclick="selectRoom('all')"
+            class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+            title="Kembali ke Semua Ruangan">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
+          </button>
+          <div>
+            <h2 id="detailRoomTitle" class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <span>Ruang Server Utama</span>
+              <span id="detailRoomDeviceBadge"
+                class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/30">ROOM_01</span>
+            </h2>
+            <p id="detailRoomSubtitle" class="text-xs text-slate-400">Monitoring metrik suhu, kelembaban, dan
+              indeks kenyamanan udara</p>
           </div>
         </div>
-        <div class="flex items-baseline space-x-2">
-          <span id="valTemp" class="text-4xl sm:text-5xl font-black text-white tracking-tight">--.-</span>
-          <span class="text-xl sm:text-2xl font-bold text-orange-400">°C</span>
-        </div>
 
-        <!-- Status & Mini Session Stats -->
-        <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-2 text-xs">
-          <div class="flex items-center justify-between">
+        <button onclick="openDeviceEditModal(AppState.selectedRoomId)"
+          class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+          <span>Konfig Ruangan Ini</span>
+        </button>
+      </div>
+
+      <!-- 4 KPI Metrics Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <!-- CARD 1: SUHU TERKINI -->
+        <div id="cardTemp"
+          class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl transition-all duration-300 relative overflow-hidden group hover:border-orange-500/40">
+          <div class="flex items-center justify-between text-slate-400 mb-2">
+            <span class="text-xs font-semibold uppercase tracking-wider">Suhu Terkini</span>
+            <div class="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div class="flex items-baseline space-x-2">
+            <span id="valTemperature"
+              class="text-3xl sm:text-4xl font-black tracking-tight text-white font-mono">--.-</span>
+            <span class="text-lg font-bold text-orange-400">°C</span>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-xs">
             <span id="badgeTempStatus"
-              class="px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-slate-800 text-slate-300">Menunggu</span>
-            <span class="text-slate-400 text-[11px]">Batas: <span id="labelTempThreshold"
-                class="font-mono text-slate-300">18 - 30 °C</span></span>
+              class="px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">Normal</span>
+            <span id="labelTempLimits" class="text-slate-500 font-mono text-[11px]">Batas: 18 - 30 °C</span>
           </div>
-          <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono">
-            <span>Min: <strong id="statTempMin" class="text-slate-300">--</strong></span>
-            <span>Rata2: <strong id="statTempAvg" class="text-slate-300">--</strong></span>
-            <span>Max: <strong id="statTempMax" class="text-slate-300">--</strong></span>
+          <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between text-[11px] text-slate-400">
+            <span>Min: <strong id="valTempMin" class="text-white">--</strong></span>
+            <span>Avg: <strong id="valTempAvg" class="text-white">--</strong></span>
+            <span>Max: <strong id="valTempMax" class="text-white">--</strong></span>
           </div>
-        </div>
-      </div>
-
-      <!-- CARD 2: KELEMBABAN RELATIF -->
-      <div id="cardHum"
-        class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl transition-all duration-300 relative overflow-hidden group">
-        <div
-          class="absolute -right-6 -bottom-6 w-28 h-28 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition">
-        </div>
-        <div class="flex items-center justify-between text-slate-400 mb-3">
-          <span class="text-xs font-bold uppercase tracking-wider">Kelembaban Relatif</span>
-          <div
-            class="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-            </svg>
-          </div>
-        </div>
-        <div class="flex items-baseline space-x-2">
-          <span id="valHum" class="text-4xl sm:text-5xl font-black text-white tracking-tight">--.-</span>
-          <span class="text-xl sm:text-2xl font-bold text-cyan-400">%RH</span>
         </div>
 
-        <!-- Status & Mini Session Stats -->
-        <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-2 text-xs">
-          <div class="flex items-center justify-between">
+        <!-- CARD 2: KELEMBABAN RELATIF -->
+        <div id="cardHum"
+          class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl transition-all duration-300 relative overflow-hidden group hover:border-cyan-500/40">
+          <div class="flex items-center justify-between text-slate-400 mb-2">
+            <span class="text-xs font-semibold uppercase tracking-wider">Kelembaban Relatif</span>
+            <div class="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+              </svg>
+            </div>
+          </div>
+          <div class="flex items-baseline space-x-2">
+            <span id="valHumidity"
+              class="text-3xl sm:text-4xl font-black tracking-tight text-white font-mono">--.-</span>
+            <span class="text-lg font-bold text-cyan-400">%RH</span>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-xs">
             <span id="badgeHumStatus"
-              class="px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-slate-800 text-slate-300">Menunggu</span>
-            <span class="text-slate-400 text-[11px]">Batas: <span id="labelHumThreshold"
-                class="font-mono text-slate-300">40 - 70 %</span></span>
+              class="px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">Normal</span>
+            <span id="labelHumLimits" class="text-slate-500 font-mono text-[11px]">Batas: 40 - 70 %</span>
           </div>
-          <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono">
-            <span>Min: <strong id="statHumMin" class="text-slate-300">--</strong></span>
-            <span>Rata2: <strong id="statHumAvg" class="text-slate-300">--</strong></span>
-            <span>Max: <strong id="statHumMax" class="text-slate-300">--</strong></span>
+          <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between text-[11px] text-slate-400">
+            <span>Min: <strong id="valHumMin" class="text-white">--</strong></span>
+            <span>Avg: <strong id="valHumAvg" class="text-white">--</strong></span>
+            <span>Max: <strong id="valHumMax" class="text-white">--</strong></span>
           </div>
         </div>
-      </div>
 
-      <!-- CARD 3: INDEKS KENYAMANAN UDARA -->
-      <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden group">
+        <!-- CARD 3: INDEKS KENYAMANAN UDARA -->
         <div
-          class="absolute -right-6 -bottom-6 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition">
-        </div>
-        <div class="flex items-center justify-between text-slate-400 mb-3">
-          <span class="text-xs font-bold uppercase tracking-wider">Kenyamanan Udara</span>
-          <div
-            class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl transition-all duration-300 group hover:border-teal-500/40">
+          <div class="flex items-center justify-between text-slate-400 mb-2">
+            <span class="text-xs font-semibold uppercase tracking-wider">Kenyamanan Udara</span>
+            <div class="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z" />
+              </svg>
+            </div>
+          </div>
+          <div class="flex items-baseline space-x-2">
+            <span id="valHeatIndex"
+              class="text-3xl sm:text-4xl font-black tracking-tight text-white font-mono">--.-</span>
+            <span class="text-sm font-bold text-teal-400">°C (Terasa)</span>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-xs">
+            <span id="badgeComfortLevel"
+              class="px-2 py-0.5 rounded-full font-bold bg-teal-500/10 text-teal-300 border border-teal-500/30">Nyaman</span>
+            <span class="text-slate-400 text-[11px]">Heat Index</span>
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between text-[11px] text-slate-400">
+            <span>Dew Point: <strong id="valDewPoint" class="text-teal-300 font-mono">-- °C</strong></span>
+            <span id="labelDewPointNote" class="text-slate-500">Kering Sejuk</span>
           </div>
         </div>
-        <div class="flex flex-col">
-          <span id="valComfortStatus" class="text-2xl sm:text-3xl font-black text-white truncate">Optimal</span>
-          <span id="valComfortDesc" class="text-xs text-slate-400 mt-1">Suhu & kelembaban seimbang</span>
-        </div>
-        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-          <span>Titik Embun (Dew Point):</span>
-          <span id="valDewPoint" class="font-mono font-bold text-emerald-400">-- °C</span>
-        </div>
-      </div>
 
-      <!-- CARD 4: PERANGKAT & WAKTU UPDATE -->
-      <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden group">
+        <!-- CARD 4: STATUS NODE & DEVICE HEALTH -->
         <div
-          class="absolute -right-6 -bottom-6 w-28 h-28 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition">
-        </div>
-        <div class="flex items-center justify-between text-slate-400 mb-3">
-          <span class="text-xs font-bold uppercase tracking-wider">Node & Riwayat</span>
-          <div
-            class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-            </svg>
+          class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl transition-all duration-300 group hover:border-indigo-500/40">
+          <div class="flex items-center justify-between text-slate-400 mb-2">
+            <span class="text-xs font-semibold uppercase tracking-wider">Waktu Pembaruan</span>
+            <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div class="flex items-baseline space-x-2">
+            <span id="valLastTimeRelative"
+              class="text-2xl sm:text-3xl font-black tracking-tight text-white truncate">Baru saja</span>
+          </div>
+          <div class="mt-2 text-xs text-slate-400 font-mono truncate" id="valLastTimeExact">
+            2026-11-21 --:--:--
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between text-[11px] text-slate-400">
+            <span>Total Log: <strong id="valTotalSampleCount" class="text-teal-300 font-mono">0</strong></span>
+            <span id="valLatencyMs" class="text-slate-400 font-mono">Ping: 3.2s</span>
           </div>
         </div>
-        <div class="flex flex-col">
-          <span id="valDeviceId"
-            class="text-xl sm:text-2xl font-black text-white truncate font-mono">ROOM_Server01</span>
-          <div class="flex items-center space-x-1.5 mt-1">
-            <span id="deviceHealthDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-            <span id="valLastTimeRelative" class="text-xs font-semibold text-slate-300">--</span>
-          </div>
-        </div>
-        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-          <span>Total Log Terkumpul:</span>
-          <span id="totalPointsCount" class="font-mono font-bold text-teal-400">0 Data</span>
-        </div>
+
       </div>
+    </div>
 
-    </section>
-
-    <!-- 2. INTERACTIVE REALTIME DUAL-AXIS CHART SECTION -->
-    <section class="p-5 sm:p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <!-- C. GRAFIK TREN TELEMETRI REALTIME -->
+    <section class="p-5 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div class="flex items-center space-x-2">
-            <h2 class="text-base font-bold text-white tracking-tight">Tren Telemetri Realtime</h2>
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-teal-400 border border-slate-700">Dual
-              Y-Axis</span>
+            <h2 id="chartTitle" class="text-base font-bold text-white tracking-tight">Tren Telemetri Realtime</h2>
+            <span id="chartModeBadge"
+              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-teal-400 border border-slate-700">Komparasi
+              Suhu</span>
           </div>
-          <p class="text-xs text-slate-400 mt-0.5">Sumbu Kiri: Suhu (°C, Oranye) &bull; Sumbu Kanan: Kelembaban (%RH,
-            Cyan)</p>
+          <p id="chartSubtitle" class="text-xs text-slate-400 mt-0.5">Membandingkan fluktuasi suhu antar seluruh ruangan
+            secara berdampingan</p>
         </div>
 
         <!-- Controls: Visibility Toggles & Range Limit Buttons -->
         <div class="flex flex-wrap items-center gap-2">
 
-          <!-- Visibility Toggles -->
-          <div class="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs">
+          <!-- Single Room Visibility Toggles (Hanya muncul jika 1 ruangan dipilih) -->
+          <div id="chartSingleRoomToggles"
+            class="hidden flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs">
             <button onclick="toggleDataset(0)" id="btnToggleTemp"
               class="px-2.5 py-1 rounded-lg text-orange-400 font-semibold bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 transition flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-orange-400"></span>
@@ -410,14 +471,14 @@
         </div>
       </div>
 
-      <!-- Chart Container -->
+      <!-- Chart Canvas Container -->
       <div class="w-full h-72 sm:h-80 md:h-96 relative">
         <canvas id="telemetryChart"></canvas>
       </div>
     </section>
 
-    <!-- 3. ADVANCED DATA LOG TABLE WITH SHOW VIEW & PAGINATION -->
-    <section class="p-5 sm:p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+    <!-- D. ADVANCED DATA LOG TABLE WITH SHOW VIEW & PAGINATION -->
+    <section class="p-5 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
 
       <!-- Table Header & Controls Bar -->
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-1">
@@ -428,22 +489,22 @@
               class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 font-mono">0
               Data</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Riwayat lengkap pembacaan sensor yang tersimpan pada Google
-            Spreadsheet</p>
+          <p id="tableSubtitle" class="text-xs text-slate-400 mt-0.5">Riwayat lengkap pembacaan sensor yang tersimpan
+            pada Google Spreadsheet</p>
         </div>
 
         <!-- Filter, Show View, Search, & Export Controls -->
         <div class="flex flex-wrap items-center gap-2.5">
 
-          <!-- SHOW VIEW SELECTOR (Berapa data yang ditampilkan) -->
+          <!-- SHOW VIEW SELECTOR -->
           <div
             class="flex items-center space-x-1.5 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700 text-xs text-slate-300">
             <label for="tablePageSizeSelect"
               class="text-slate-400 text-[11px] font-medium whitespace-nowrap">Tampilkan:</label>
             <select id="tablePageSizeSelect" onchange="changePageSize(this.value)"
               class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-teal-400 font-bold focus:outline-none focus:border-teal-500 cursor-pointer">
-              <option value="10">10 Data</option>
-              <option value="20" selected>20 Data</option>
+              <option value="10" selected>10 Data</option>
+              <option value="20">20 Data</option>
               <option value="50">50 Data</option>
               <option value="100">100 Data</option>
               <option value="all">Semua Data</option>
@@ -462,7 +523,7 @@
 
           <!-- Search Input -->
           <div class="relative flex-grow sm:flex-grow-0">
-            <input type="text" id="tableFilterInput" placeholder="Cari waktu / status..." oninput="handleSearchInput()"
+            <input type="text" id="tableFilterInput" placeholder="Cari waktu / ruangan..." oninput="handleSearchInput()"
               class="w-full sm:w-44 px-3 py-1.5 pl-8 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500">
             <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor"
               viewBox="0 0 24 24">
@@ -494,7 +555,7 @@
                 onclick="sortTable('index')">#</th>
               <th scope="col" class="px-4 py-3.5 cursor-pointer hover:text-white transition"
                 onclick="sortTable('timestamp')">Waktu (WIB) ↕</th>
-              <th scope="col" class="px-4 py-3.5">Device ID</th>
+              <th scope="col" class="px-4 py-3.5">Ruangan / Device ID</th>
               <th scope="col" class="px-4 py-3.5 cursor-pointer hover:text-white transition"
                 onclick="sortTable('temperature')">Suhu (°C) ↕</th>
               <th scope="col" class="px-4 py-3.5 cursor-pointer hover:text-white transition"
@@ -505,7 +566,7 @@
           <tbody id="telemetryTableBody" class="divide-y divide-slate-800/60 font-mono">
             <tr>
               <td colspan="6" class="px-4 py-8 text-center text-slate-500 font-sans">
-                Belum ada data tersedia. Menghubungkan ke API...
+                Memuat data telemetri dari Google Apps Script...
               </td>
             </tr>
           </tbody>
@@ -524,9 +585,7 @@
             class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
             &laquo; Sebelumnya
           </button>
-          <div id="pageNumberButtons" class="flex items-center space-x-1">
-            <!-- Dynamic Page Pills -->
-          </div>
+          <div id="pageNumberButtons" class="flex items-center space-x-1"></div>
           <button onclick="nextPage()" id="btnNextPage"
             class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
             Berikutnya &raquo;
@@ -543,18 +602,76 @@
   <!-- ===================================================================== -->
   <footer class="border-t border-slate-800/80 py-4 bg-slate-950/80 text-center text-xs text-slate-500">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <span class="font-medium">IoT EcoSense &bull; Realtime Monitoring Platform &copy; 2026</span>
-      <span>ESP32-S3 Firmware &bull; Google Apps Script REST API &bull; Tailwind Dashboard</span>
+      <span class="font-medium">IoT EcoSense &bull; Multi-Room Realtime Monitoring &copy; 2026</span>
+      <span>ESP32 Firmware &bull; Google Sheets Database &bull; Dynamic Provisioning</span>
     </div>
   </footer>
 
   <!-- ===================================================================== -->
-  <!-- SETTINGS MODAL / CONFIGURATION DIALOG -->
+  <!-- MODAL: KELOLA RUANGAN & PENAMAAN DINAMIS (DEVICE MANAGEMENT) -->
+  <!-- ===================================================================== -->
+  <div id="deviceManagerModal"
+    class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div
+      class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div
+            class="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center border border-teal-500/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Kelola Ruangan & Identitas Alat</h3>
+            <p class="text-xs text-slate-400">Ubah nama ruangan, interval pengiriman, dan ambang batas per-alat</p>
+          </div>
+        </div>
+        <button onclick="closeDeviceManagerModal()"
+          class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Quick Explanation Callout -->
+      <!-- <div class="p-3 bg-teal-500/10 border border-teal-500/20 rounded-2xl text-xs text-teal-300">
+        💡 <strong>Zero-Touch Naming:</strong> Anda dapat memberikan nama ruangan ramah (misal: <em>Ruang Server
+          Utama</em>, <em>Ruang Laboratorium</em>) langsung dari sini. Begitu disimpan, nama dan interval baru otomatis
+        terkirim dan tersimpan di memori flash ESP32 tanpa perlu upload ulang kode!
+      </div> -->
+
+      <!-- Device List Form -->
+      <div id="deviceManagerListContainer" class="space-y-4">
+        <!-- Rendered dynamically by renderDeviceManagerList() -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-800 text-xs">
+        <button type="button" onclick="addNewDummyDeviceForTesting()"
+          class="text-teal-400 hover:text-teal-300 font-semibold">
+          + Simulasi Tambah Ruangan Baru
+        </button>
+        <button type="button" onclick="closeDeviceManagerModal()"
+          class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition">
+          Tutup
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: PENGATURAN UMUM / GLOBAL SETTINGS -->
   <!-- ===================================================================== -->
   <div id="settingsModal"
     class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
     <div
-      class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-5 animate-in fade-in duration-200">
+      class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
 
       <!-- Modal Header -->
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -567,8 +684,8 @@
             </svg>
           </div>
           <div>
-            <h3 class="text-base font-bold text-white">Pengaturan Dashboard & Ambang Batas</h3>
-            <p class="text-xs text-slate-400">Sinkronisasi Cloud Google Apps Script & Alarm Ambang Batas</p>
+            <h3 class="text-base font-bold text-white">Pengaturan Sistem & Server</h3>
+            <p class="text-xs text-slate-400">Konfigurasi URL Google Apps Script & Audio Alarm</p>
           </div>
         </div>
         <button onclick="closeSettingsModal()"
@@ -591,20 +708,40 @@
               deployments</strong> pada Google Apps Script.</p>
         </div>
 
-        <!-- Remote Config & Audio Alert -->
+        <!-- Tombol Pintas: Buka Konfigurasi Per-Ruangan -->
+        <div
+          class="p-3.5 bg-gradient-to-r from-teal-500/15 via-teal-500/10 to-cyan-500/15 border border-teal-500/30 rounded-2xl flex items-center justify-between gap-3">
+          <div>
+            <div class="font-bold text-teal-300 flex items-center gap-1.5">
+              <span>🏢</span>
+              <span>Konfigurasi Ruangan & Alat (Per-Ruangan)</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Ubah nama ruangan, interval Alat, dan batas suhu/kelembaban
+              masing-masing alat.</div>
+          </div>
+          <button type="button" onclick="closeSettingsModal(); openDeviceManagerModal();"
+            class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs whitespace-nowrap shadow-md shadow-teal-700/20 transition flex items-center gap-1">
+            <span>Buka Konfigurasi</span>
+            <span>&raquo;</span>
+          </button>
+        </div>
+
+        <!-- Global Interval & Audio Alert -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block font-semibold text-slate-300">Interval Refresh (detik)</label>
-            </div>
+            <label class="block font-semibold text-slate-300 mb-1">Interval Refresh Web (Layar Browser)</label>
             <select id="cfgInterval"
               class="w-full px-3 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-teal-500 font-sans">
               <option value="5">5 Detik (Cepat / Responsif)</option>
               <option value="10">10 Detik (Standar Rekomendasi)</option>
               <option value="15">15 Detik</option>
               <option value="30" selected>30 Detik (Ideal & Hemat)</option>
-              <option value="60">60 Detik (Hemat Kuota)</option>
+              <option value="60">60 Detik (1 Menit)</option>
+              <option value="120">120 Detik (2 Menit)</option>
+              <option value="300">300 Detik (5 Menit)</option>
             </select>
+            <p class="text-[10px] text-slate-400 mt-1">Kecepatan layar web menarik data terbaru dari cloud (bukan
+              kecepatan ESP32).</p>
           </div>
 
           <div>
@@ -614,37 +751,7 @@
               <option value="false">Mati (Hanya Visual)</option>
               <option value="true">Aktif (Beep Alarm)</option>
             </select>
-          </div>
-        </div>
-
-        <!-- Thresholds -->
-        <div class="p-3.5 bg-slate-800/60 rounded-2xl border border-slate-800 space-y-3">
-          <div class="font-bold text-slate-200 text-xs">Batas Ambang Normal (Threshold Alert)</div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <span class="text-slate-400 block mb-1">Suhu Min (°C):</span>
-              <input type="number" id="cfgTempMin" step="0.5"
-                class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
-            </div>
-            <div>
-              <span class="text-slate-400 block mb-1">Suhu Max (°C):</span>
-              <input type="number" id="cfgTempMax" step="0.5"
-                class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <span class="text-slate-400 block mb-1">Kelembaban Min (%):</span>
-              <input type="number" id="cfgHumMin" step="1"
-                class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
-            </div>
-            <div>
-              <span class="text-slate-400 block mb-1">Kelembaban Max (%):</span>
-              <input type="number" id="cfgHumMax" step="1"
-                class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
-            </div>
+            <p class="text-[10px] text-slate-400 mt-1">Bunyikan nada bip saat ada suhu/kelembaban melampaui batas.</p>
           </div>
         </div>
 
@@ -682,7 +789,7 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- VANILLA JAVASCRIPT APPLICATION CORE -->
+  <!-- VANILLA JAVASCRIPT APPLICATION CORE (MULTI-DEVICE ENGINE) -->
   <!-- ===================================================================== -->
   <script>
     // State Aplikasi Global
@@ -690,12 +797,6 @@
       gasUrl: localStorage.getItem('iot_gas_url') || 'https://script.google.com/macros/s/AKfycbxJgJMG8B3yveCjTUsgq3S3oJxkyumnpwLBw_y5R9u9HqgkBupTwG3Cum-PJPJVfvAK/exec',
       pollIntervalSec: parseInt(localStorage.getItem('iot_poll_interval') || '30', 10),
       soundAlert: localStorage.getItem('iot_sound_alert') === 'true',
-      thresholds: {
-        tempMin: parseFloat(localStorage.getItem('iot_temp_min') || '18.0'),
-        tempMax: parseFloat(localStorage.getItem('iot_temp_max') || '30.0'),
-        humMin: parseFloat(localStorage.getItem('iot_hum_min') || '40.0'),
-        humMax: parseFloat(localStorage.getItem('iot_hum_max') || '70.0')
-      },
       demoMode: localStorage.getItem('iot_demo_mode') === 'true',
       isPaused: false,
       pollTimer: null,
@@ -703,13 +804,31 @@
       countdownLeft: 30,
       chartLimit: 50,
       chartInstance: null,
-      cachedData: [],
-      latestRecord: null,
-      lastSuccessfulFetchTime: null,
+
+      // Multi-Room / Multi-Device State
+      selectedRoomId: 'all', // 'all' atau specific device_id (e.g. 'ROOM_Server01')
+      devices: JSON.parse(localStorage.getItem('iot_device_registry') || 'null') || [
+        {
+          device_id: 'ROOM_01',
+          name: 'Ruang Server',
+          send_interval_sec: 5,
+          temp_min: 18.0,
+          temp_max: 28.0,
+          hum_min: 40.0,
+          hum_max: 70.0,
+          last_seen: '-',
+          latest_temp: null,
+          latest_hum: null,
+          latest_status: 'Normal',
+          is_online: true
+        }
+      ],
+
+      cachedData: [], // Seluruh data log mentah dari server
 
       // Table View & Pagination State
       table: {
-        pageSize: parseInt(localStorage.getItem('iot_table_page_size') || '20', 10) || 20, // 10, 20, 50, 100, or 'all'
+        pageSize: localStorage.getItem('iot_table_page_size') === 'all' ? 'all' : parseInt(localStorage.getItem('iot_table_page_size') || '20', 10),
         currentPage: 1,
         searchQuery: '',
         statusFilter: 'all', // 'all', 'normal', 'warning'
@@ -718,11 +837,20 @@
       }
     };
 
+    // Color Palette untuk Garis Komparasi Antar Ruangan di Grafik
+    const ROOM_PALETTE = [
+      { border: '#f97316', bg: 'rgba(249, 115, 22, 0.15)', name: 'Orange' },
+      { border: '#14b8a6', bg: 'rgba(20, 184, 166, 0.15)', name: 'Teal' },
+      { border: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)', name: 'Indigo' },
+      { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', name: 'Pink' },
+      { border: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', name: 'Yellow' }
+    ];
+
     // Inisialisasi Saat Dokumen Siap
     document.addEventListener('DOMContentLoaded', () => {
       initSettingsUI();
+      renderRoomNavigationTabs();
       initChart();
-      updateThresholdLabels();
       checkDemoModeUI();
 
       // Mulai siklus data
@@ -739,11 +867,12 @@
         fetchTelemetryData();
         resetCountdown();
       });
+      document.getElementById('btnOpenDeviceManager').addEventListener('click', openDeviceManagerModal);
       document.getElementById('btnOpenSettings').addEventListener('click', openSettingsModal);
     });
 
     // -------------------------------------------------------------------------
-    // 1. Inisialisasi Realtime Clock
+    // 1. Clock & Realtime Ticker
     // -------------------------------------------------------------------------
     function updateRealtimeClock() {
       const now = new Date();
@@ -754,63 +883,327 @@
     }
 
     // -------------------------------------------------------------------------
-    // 2. Inisialisasi Chart.js
+    // 2. Room Navigation & Tab Selector
+    // -------------------------------------------------------------------------
+    function renderRoomNavigationTabs() {
+      const container = document.getElementById('dynamicRoomTabs');
+      const badgeCount = document.getElementById('badgeAllRoomCount');
+      const navBadge = document.getElementById('navDeviceCountBadge');
+
+      if (badgeCount) badgeCount.textContent = AppState.devices.length;
+      if (navBadge) navBadge.textContent = `${AppState.devices.length} Ruangan Aktif`;
+
+      let html = '';
+      AppState.devices.forEach((dev) => {
+        const isSelected = AppState.selectedRoomId === dev.device_id;
+        const onlineClass = dev.is_online ? 'bg-emerald-400' : 'bg-slate-500';
+        const activeClass = isSelected
+          ? 'bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-sm'
+          : 'bg-slate-800/80 text-slate-300 hover:text-white border-slate-700/80';
+
+        html += `
+          <button onclick="selectRoom('${dev.device_id}')" id="tabRoom_${dev.device_id}" class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 border whitespace-nowrap ${activeClass}">
+            <span class="w-2 h-2 rounded-full ${onlineClass}"></span>
+            <span>${dev.name || dev.device_id}</span>
+          </button>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      // Update active state tab "all"
+      const tabAll = document.getElementById('tabRoom_all');
+      if (tabAll) {
+        if (AppState.selectedRoomId === 'all') {
+          tabAll.className = 'px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 bg-teal-500/20 text-teal-300 border border-teal-500/40 whitespace-nowrap shadow-sm';
+        } else {
+          tabAll.className = 'px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/80 whitespace-nowrap';
+        }
+      }
+
+      // Update subtitle indicator
+      const activeText = document.getElementById('activeRoomIndicator');
+      if (activeText) {
+        if (AppState.selectedRoomId === 'all') {
+          activeText.innerHTML = `Mode: <strong class="text-white">Overview Semua Ruangan (${AppState.devices.length})</strong>`;
+        } else {
+          const d = AppState.devices.find(x => x.device_id === AppState.selectedRoomId);
+          const roomName = d ? d.name : AppState.selectedRoomId;
+          activeText.innerHTML = `Ruangan: <strong class="text-teal-300">${roomName}</strong> (${AppState.selectedRoomId})`;
+        }
+      }
+    }
+
+    function selectRoom(roomId) {
+      AppState.selectedRoomId = roomId;
+      AppState.table.currentPage = 1;
+
+      renderRoomNavigationTabs();
+
+      const overviewSec = document.getElementById('multiRoomOverviewSection');
+      const detailSec = document.getElementById('singleRoomDetailSection');
+      const singleToggles = document.getElementById('chartSingleRoomToggles');
+      const chartBadge = document.getElementById('chartModeBadge');
+      const chartSubtitle = document.getElementById('chartSubtitle');
+
+      if (roomId === 'all') {
+        overviewSec.classList.remove('hidden');
+        detailSec.classList.add('hidden');
+        singleToggles.classList.add('hidden');
+        chartBadge.textContent = 'Komparasi Suhu';
+        chartSubtitle.textContent = 'Membandingkan fluktuasi suhu antar seluruh ruangan secara berdampingan';
+      } else {
+        overviewSec.classList.add('hidden');
+        detailSec.classList.remove('hidden');
+        singleToggles.classList.remove('hidden');
+        chartBadge.textContent = 'Dual Y-Axis';
+        chartSubtitle.textContent = 'Sumbu Kiri: Suhu (°C, Oranye) • Sumbu Kanan: Kelembaban (%RH, Cyan)';
+
+        const dev = AppState.devices.find(x => x.device_id === roomId);
+        if (dev) {
+          document.getElementById('detailRoomTitle').innerHTML = `
+            <span>${dev.name}</span>
+          `;
+        }
+      }
+
+      // Re-render chart & table
+      renderMultiRoomGrid();
+      if (roomId !== 'all') {
+        renderSingleRoomKPI(roomId);
+      }
+      renderChart();
+      renderTable();
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. Multi-Room Overview Cards Grid
+    // -------------------------------------------------------------------------
+    function renderMultiRoomGrid() {
+      const container = document.getElementById('multiRoomGrid');
+      if (!container) return;
+
+      if (AppState.devices.length === 0) {
+        container.innerHTML = `<div class="col-span-3 p-8 text-center text-slate-500">Belum ada perangkat / ruangan yang terhubung.</div>`;
+        return;
+      }
+
+      let html = '';
+      AppState.devices.forEach((dev, idx) => {
+        // Cari data terbaru dari log untuk device ini
+        const devLogs = AppState.cachedData.filter(d => d.device_id === dev.device_id);
+        const latest = devLogs.length > 0 ? devLogs[devLogs.length - 1] : null;
+
+        const temp = latest ? parseFloat(latest.temperature).toFixed(1) : (dev.latest_temp ? parseFloat(dev.latest_temp).toFixed(1) : '--.-');
+        const hum = latest ? parseFloat(latest.humidity).toFixed(1) : (dev.latest_hum ? parseFloat(dev.latest_hum).toFixed(1) : '--.-');
+        const status = latest ? latest.status : (dev.latest_status || 'Normal');
+        const isWarning = status && status.toLowerCase().includes('warning');
+
+        const onlineDot = dev.is_online
+          ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Online</span>`
+          : `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>Offline</span>`;
+
+        const statusBadge = isWarning
+          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">${status}</span>`
+          : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">Normal</span>`;
+
+        const lastSeen = latest ? latest.timestamp : (dev.last_seen || '-');
+
+        html += `
+          <div class="p-5 rounded-2xl bg-slate-900 border ${isWarning ? 'border-rose-500/50 shadow-glow-rose' : 'border-slate-800 hover:border-teal-500/40'} shadow-xl transition-all space-y-4">
+            
+            <!-- Card Header -->
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+                  <span>${dev.name || dev.device_id}</span>
+                </h3>
+              </div>
+              <div>${onlineDot}</div>
+            </div>
+
+            <!-- Temperature & Humidity Big Numbers -->
+            <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+              <div>
+                <div class="text-[10px] uppercase font-bold text-orange-400 tracking-wider">Suhu</div>
+                <div class="text-2xl font-black text-white font-mono mt-0.5">${temp} <span class="text-xs text-orange-400">°C</span></div>
+              </div>
+              <div>
+                <div class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Kelembaban</div>
+                <div class="text-2xl font-black text-white font-mono mt-0.5">${hum} <span class="text-xs text-cyan-400">%</span></div>
+              </div>
+            </div>
+
+            <!-- Status & Footer -->
+            <div class="flex items-center justify-between text-xs pt-1">
+              <div>${statusBadge}</div>
+              <span class="text-[11px] text-slate-500 font-mono">${formatIntervalBadge(dev.send_interval_sec)} interval</span>
+            </div>
+
+            <!-- Action Button -->
+            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+              <span class="text-[11px] text-slate-400 truncate max-w-[150px] font-mono">${lastSeen}</span>
+              <button onclick="selectRoom('${dev.device_id}')" class="px-3 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 font-bold border border-teal-500/30 transition text-xs flex items-center gap-1">
+                <span>Detail</span>
+                <span>&raquo;</span>
+              </button>
+            </div>
+
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. Single Room Detailed KPI Cards
+    // -------------------------------------------------------------------------
+    function renderSingleRoomKPI(roomId) {
+      const dev = AppState.devices.find(d => d.device_id === roomId);
+      const devLogs = AppState.cachedData.filter(d => d.device_id === roomId);
+      const latest = devLogs.length > 0 ? devLogs[devLogs.length - 1] : null;
+
+      if (!latest) {
+        document.getElementById('valTemperature').textContent = '--.-';
+        document.getElementById('valHumidity').textContent = '--.-';
+        document.getElementById('valHeatIndex').textContent = '--.-';
+        return;
+      }
+
+      const temp = parseFloat(latest.temperature);
+      const hum = parseFloat(latest.humidity);
+
+      document.getElementById('valTemperature').textContent = temp.toFixed(1);
+      document.getElementById('valHumidity').textContent = hum.toFixed(1);
+      document.getElementById('valLastTimeExact').textContent = latest.timestamp;
+
+      // Stats Min/Avg/Max
+      const temps = devLogs.map(d => parseFloat(d.temperature)).filter(n => !isNaN(n));
+      const hums = devLogs.map(d => parseFloat(d.humidity)).filter(n => !isNaN(n));
+
+      if (temps.length > 0) {
+        document.getElementById('valTempMin').textContent = `${Math.min(...temps).toFixed(1)}°`;
+        document.getElementById('valTempAvg').textContent = `${(temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1)}°`;
+        document.getElementById('valTempMax').textContent = `${Math.max(...temps).toFixed(1)}°`;
+      }
+      if (hums.length > 0) {
+        document.getElementById('valHumMin').textContent = `${Math.min(...hums).toFixed(1)}%`;
+        document.getElementById('valHumAvg').textContent = `${(hums.reduce((a, b) => a + b, 0) / hums.length).toFixed(1)}%`;
+        document.getElementById('valHumMax').textContent = `${Math.max(...hums).toFixed(1)}%`;
+      }
+
+      document.getElementById('valTotalSampleCount').textContent = devLogs.length;
+
+      // Limits Labels
+      const tMin = dev ? dev.temp_min : 18;
+      const tMax = dev ? dev.temp_max : 30;
+      const hMin = dev ? dev.hum_min : 40;
+      const hMax = dev ? dev.hum_max : 70;
+
+      document.getElementById('labelTempLimits').textContent = `Batas: ${tMin} - ${tMax} °C`;
+      document.getElementById('labelHumLimits').textContent = `Batas: ${hMin} - ${hMax} %`;
+
+      // Status Badges
+      const badgeTemp = document.getElementById('badgeTempStatus');
+      if (temp > tMax) {
+        badgeTemp.textContent = 'Terlalu Panas';
+        badgeTemp.className = 'px-2 py-0.5 rounded-full font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40';
+      } else if (temp < tMin) {
+        badgeTemp.textContent = 'Terlalu Dingin';
+        badgeTemp.className = 'px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+      } else {
+        badgeTemp.textContent = 'Normal';
+        badgeTemp.className = 'px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+      }
+
+      const badgeHum = document.getElementById('badgeHumStatus');
+      if (hum > hMax) {
+        badgeHum.textContent = 'Terlalu Lembab';
+        badgeHum.className = 'px-2 py-0.5 rounded-full font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40';
+      } else if (hum < hMin) {
+        badgeHum.textContent = 'Terlalu Kering';
+        badgeHum.className = 'px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+      } else {
+        badgeHum.textContent = 'Normal';
+        badgeHum.className = 'px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+      }
+
+      // Heat Index & Dew Point
+      const heatIndex = calculateHeatIndex(temp, hum);
+      const dewPoint = calculateDewPoint(temp, hum);
+
+      document.getElementById('valHeatIndex').textContent = heatIndex.toFixed(1);
+      document.getElementById('valDewPoint').textContent = `${dewPoint.toFixed(1)} °C`;
+
+      const badgeComfort = document.getElementById('badgeComfortLevel');
+      if (heatIndex >= 32) {
+        badgeComfort.textContent = 'Waspada Panas';
+        badgeComfort.className = 'px-2 py-0.5 rounded-full font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40';
+      } else if (heatIndex >= 27) {
+        badgeComfort.textContent = 'Agak Hangat';
+        badgeComfort.className = 'px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+      } else {
+        badgeComfort.textContent = 'Sangat Nyaman';
+        badgeComfort.className = 'px-2 py-0.5 rounded-full font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40';
+      }
+    }
+
+    function calculateHeatIndex(tempC, hum) {
+      const T = (tempC * 9 / 5) + 32;
+      const R = hum;
+      const HI = -42.379 + 2.04901523 * T + 10.14333127 * R - 0.22475541 * T * R -
+        0.00683783 * T * T - 0.05481717 * R * R + 0.00122874 * T * T * R +
+        0.00085282 * T * R * R - 0.00000199 * T * T * R * R;
+      return (HI - 32) * 5 / 9;
+    }
+
+    function calculateDewPoint(tempC, hum) {
+      const a = 17.27;
+      const b = 237.7;
+      const alpha = ((a * tempC) / (b + tempC)) + Math.log(hum / 100.0);
+      return (b * alpha) / (a - alpha);
+    }
+
+    function updateRelativeTimeTicker() {
+      if (AppState.cachedData.length === 0) return;
+      let targetRecord = null;
+      if (AppState.selectedRoomId === 'all') {
+        targetRecord = AppState.cachedData[AppState.cachedData.length - 1];
+      } else {
+        const filtered = AppState.cachedData.filter(d => d.device_id === AppState.selectedRoomId);
+        targetRecord = filtered.length > 0 ? filtered[filtered.length - 1] : null;
+      }
+      if (!targetRecord || !targetRecord.timestamp) return;
+
+      const recordTime = new Date(targetRecord.timestamp.replace(/-/g, '/'));
+      const diffSec = Math.floor((new Date() - recordTime) / 1000);
+      const el = document.getElementById('valLastTimeRelative');
+      if (!el) return;
+
+      if (isNaN(diffSec) || diffSec < 0) el.textContent = 'Baru saja';
+      else if (diffSec < 60) el.textContent = `${diffSec} dtk lalu`;
+      else if (diffSec < 3600) el.textContent = `${Math.floor(diffSec / 60)} mnt lalu`;
+      else el.textContent = `${Math.floor(diffSec / 3600)} jam lalu`;
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. Chart.js (Dual Y-Axis & Multi-Room Comparative)
     // -------------------------------------------------------------------------
     function initChart() {
       const ctx = document.getElementById('telemetryChart').getContext('2d');
-
-      const tempGradient = ctx.createLinearGradient(0, 0, 0, 320);
-      tempGradient.addColorStop(0, 'rgba(249, 115, 22, 0.35)');
-      tempGradient.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
-
-      const humGradient = ctx.createLinearGradient(0, 0, 0, 320);
-      humGradient.addColorStop(0, 'rgba(6, 182, 212, 0.35)');
-      humGradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
-
       AppState.chartInstance = new Chart(ctx, {
         type: 'line',
-        data: {
-          labels: [],
-          datasets: [
-            {
-              label: 'Suhu (°C)',
-              data: [],
-              borderColor: '#f97316',
-              backgroundColor: tempGradient,
-              borderWidth: 2.5,
-              tension: 0.35,
-              fill: true,
-              pointRadius: 3,
-              pointHoverRadius: 6,
-              pointBackgroundColor: '#f97316',
-              yAxisID: 'yTemp'
-            },
-            {
-              label: 'Kelembaban (%RH)',
-              data: [],
-              borderColor: '#06b6d4',
-              backgroundColor: humGradient,
-              borderWidth: 2.5,
-              tension: 0.35,
-              fill: true,
-              pointRadius: 3,
-              pointHoverRadius: 6,
-              pointBackgroundColor: '#06b6d4',
-              yAxisID: 'yHum'
-            }
-          ]
-        },
+        data: { labels: [], datasets: [] },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          animation: { duration: 500 },
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
+          animation: { duration: 400 },
+          interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: {
-              display: false // Menggunakan tombol kustom di atas chart
+              display: true,
+              labels: { color: '#94a3b8', font: { size: 11 } }
             },
             tooltip: {
               backgroundColor: '#090d16',
@@ -818,14 +1211,7 @@
               bodyColor: '#cbd5e1',
               borderColor: '#334155',
               borderWidth: 1,
-              padding: 12,
-              boxPadding: 4,
-              callbacks: {
-                label: function (context) {
-                  const label = context.dataset.label || '';
-                  return ` ${label}: ${context.parsed.y}`;
-                }
-              }
+              padding: 10
             }
           },
           scales: {
@@ -833,373 +1219,203 @@
               grid: { color: 'rgba(51, 65, 85, 0.25)' },
               ticks: { color: '#94a3b8', maxTicksLimit: 12, font: { size: 10 } }
             },
-            yTemp: {
+            y: {
               type: 'linear',
               position: 'left',
               title: { display: true, text: 'Suhu (°C)', color: '#f97316', font: { weight: 'bold' } },
               grid: { color: 'rgba(51, 65, 85, 0.25)' },
               ticks: { color: '#f97316', font: { size: 10 } }
-            },
-            yHum: {
-              type: 'linear',
-              position: 'right',
-              title: { display: true, text: 'Kelembaban (%RH)', color: '#06b6d4', font: { weight: 'bold' } },
-              grid: { drawOnChartArea: false },
-              ticks: { color: '#06b6d4', font: { size: 10 } }
             }
           }
         }
       });
     }
 
-    function toggleDataset(index) {
+    function renderChart() {
       if (!AppState.chartInstance) return;
+
+      if (AppState.selectedRoomId === 'all') {
+        // MODE ALL: Komparasi Garis Suhu Antar Ruangan
+        const datasets = [];
+        const limit = AppState.chartLimit;
+
+        // Ambil label waktu dari riwayat terbaru
+        const sliceData = AppState.cachedData.slice(-limit);
+        const labels = sliceData.map(d => {
+          const parts = (d.timestamp || '').split(' ');
+          return parts.length > 1 ? parts[1] : d.timestamp;
+        });
+
+        // Buat dataset per perangkat aktif
+        AppState.devices.forEach((dev, idx) => {
+          const palette = ROOM_PALETTE[idx % ROOM_PALETTE.length];
+          const devDataMap = {};
+          AppState.cachedData.forEach(d => {
+            if (d.device_id === dev.device_id) {
+              const p = (d.timestamp || '').split(' ');
+              const tKey = p.length > 1 ? p[1] : d.timestamp;
+              devDataMap[tKey] = parseFloat(d.temperature);
+            }
+          });
+
+          const dataPoints = labels.map(l => devDataMap[l] !== undefined ? devDataMap[l] : null);
+
+          datasets.push({
+            label: `${dev.name || dev.device_id} (°C)`,
+            data: dataPoints,
+            borderColor: palette.border,
+            backgroundColor: palette.bg,
+            borderWidth: 2.2,
+            tension: 0.35,
+            fill: false,
+            pointRadius: 2.5,
+            spanGaps: true
+          });
+        });
+
+        AppState.chartInstance.data.labels = labels;
+        AppState.chartInstance.data.datasets = datasets;
+        AppState.chartInstance.options.scales = {
+          x: {
+            grid: { color: 'rgba(51, 65, 85, 0.25)' },
+            ticks: { color: '#94a3b8', maxTicksLimit: 12, font: { size: 10 } }
+          },
+          y: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: 'Suhu (°C)', color: '#14b8a6', font: { weight: 'bold' } },
+            grid: { color: 'rgba(51, 65, 85, 0.25)' },
+            ticks: { color: '#14b8a6', font: { size: 10 } }
+          }
+        };
+
+      } else {
+        // MODE SINGLE ROOM: Dual Y-Axis Suhu vs Kelembaban
+        const devLogs = AppState.cachedData.filter(d => d.device_id === AppState.selectedRoomId);
+        const sliceData = devLogs.slice(-AppState.chartLimit);
+
+        const labels = sliceData.map(d => {
+          const parts = (d.timestamp || '').split(' ');
+          return parts.length > 1 ? parts[1] : d.timestamp;
+        });
+
+        const tempData = sliceData.map(d => parseFloat(d.temperature));
+        const humData = sliceData.map(d => parseFloat(d.humidity));
+
+        AppState.chartInstance.data.labels = labels;
+        AppState.chartInstance.data.datasets = [
+          {
+            label: 'Suhu (°C)',
+            data: tempData,
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249, 115, 22, 0.15)',
+            borderWidth: 2.5,
+            tension: 0.35,
+            fill: true,
+            pointRadius: 3,
+            yAxisID: 'yTemp'
+          },
+          {
+            label: 'Kelembaban (%RH)',
+            data: humData,
+            borderColor: '#06b6d4',
+            backgroundColor: 'rgba(6, 182, 212, 0.15)',
+            borderWidth: 2.5,
+            tension: 0.35,
+            fill: true,
+            pointRadius: 3,
+            yAxisID: 'yHum'
+          }
+        ];
+
+        AppState.chartInstance.options.scales = {
+          x: {
+            grid: { color: 'rgba(51, 65, 85, 0.25)' },
+            ticks: { color: '#94a3b8', maxTicksLimit: 12, font: { size: 10 } }
+          },
+          yTemp: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: 'Suhu (°C)', color: '#f97316', font: { weight: 'bold' } },
+            grid: { color: 'rgba(51, 65, 85, 0.25)' },
+            ticks: { color: '#f97316', font: { size: 10 } }
+          },
+          yHum: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: 'Kelembaban (%RH)', color: '#06b6d4', font: { weight: 'bold' } },
+            grid: { drawOnChartArea: false },
+            ticks: { color: '#06b6d4', font: { size: 10 } }
+          }
+        };
+      }
+
+      AppState.chartInstance.update();
+    }
+
+    function toggleDataset(index) {
+      if (!AppState.chartInstance || !AppState.chartInstance.data.datasets[index]) return;
       const meta = AppState.chartInstance.getDatasetMeta(index);
       meta.hidden = meta.hidden === null ? !AppState.chartInstance.data.datasets[index].hidden : null;
       AppState.chartInstance.update();
-
-      const btnTemp = document.getElementById('btnToggleTemp');
-      const btnHum = document.getElementById('btnToggleHum');
-
-      if (index === 0) {
-        if (meta.hidden) {
-          btnTemp.classList.replace('text-orange-400', 'text-slate-500');
-          btnTemp.classList.replace('border-orange-500/30', 'border-slate-700');
-        } else {
-          btnTemp.classList.replace('text-slate-500', 'text-orange-400');
-          btnTemp.classList.replace('border-slate-700', 'border-orange-500/30');
-        }
-      } else {
-        if (meta.hidden) {
-          btnHum.classList.replace('text-cyan-400', 'text-slate-500');
-          btnHum.classList.replace('border-cyan-500/30', 'border-slate-700');
-        } else {
-          btnHum.classList.replace('text-slate-500', 'text-cyan-400');
-          btnHum.classList.replace('border-slate-700', 'border-cyan-500/30');
-        }
-      }
     }
 
     function setChartLimit(limit) {
       AppState.chartLimit = limit;
-      ['15', '30', '50', '100'].forEach(l => {
-        const btn = document.getElementById(`btnLimit${l}`);
-        if (!btn) return;
-        if (parseInt(l) === limit) {
-          btn.className = 'px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-semibold border border-teal-500/30 transition';
-        } else {
-          btn.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition';
+      [15, 30, 50, 100].forEach(n => {
+        const btn = document.getElementById(`btnLimit${n}`);
+        if (btn) {
+          if (n === limit) {
+            btn.className = 'px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-semibold border border-teal-500/30 transition';
+          } else {
+            btn.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition';
+          }
         }
       });
-      renderChart(AppState.cachedData);
+      renderChart();
     }
 
     // -------------------------------------------------------------------------
-    // 3. Fetch Data dari GAS API atau Demo Generator
-    // -------------------------------------------------------------------------
-    async function fetchTelemetryData() {
-      if (AppState.isPaused) return;
-
-      const refreshIcon = document.getElementById('iconRefresh');
-      refreshIcon.classList.add('animate-spin');
-
-      try {
-        let resultData = [];
-        let latest = null;
-
-        if (AppState.demoMode || !AppState.gasUrl) {
-          const mock = generateMockTelemetry();
-          resultData = mock.data;
-          latest = mock.latest;
-          setConnectionStatus('demo', 'Mode Demo Aktif');
-        } else {
-          // Ambil hingga 200 log terakhir agar tabel memiliki data yang kaya
-          const fetchLimit = 200;
-          const endpoint = AppState.gasUrl.includes('?')
-            ? `${AppState.gasUrl}&action=history&limit=${fetchLimit}`
-            : `${AppState.gasUrl}?action=history&limit=${fetchLimit}`;
-
-          const response = await fetch(endpoint, {
-            method: 'GET',
-            redirect: 'follow',
-            headers: { 'Accept': 'application/json' }
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-
-          const json = await response.json();
-
-          if (json.status !== 'success') {
-            throw new Error(json.message || 'Respon API menyatakan gagal.');
-          }
-
-          resultData = Array.isArray(json.data) ? json.data : [];
-          latest = json.latest || (resultData.length > 0 ? resultData[resultData.length - 1] : null);
-
-          // Sinkronisasi otomatis konfigurasi dari Cloud jika ada
-          if (json.config && json.config.send_interval_sec) {
-            const cloudInterval = parseInt(json.config.send_interval_sec, 10);
-            if (cloudInterval && AppState.pollIntervalSec !== cloudInterval) {
-              AppState.pollIntervalSec = cloudInterval;
-              localStorage.setItem('iot_poll_interval', cloudInterval);
-              const inputEl = document.getElementById('cfgInterval');
-              if (inputEl) inputEl.value = cloudInterval;
-              startPollingScheduler();
-            }
-          }
-
-          setConnectionStatus('online', 'Terkoneksi (Live)');
-        }
-
-        AppState.cachedData = resultData;
-        AppState.latestRecord = latest;
-        AppState.lastSuccessfulFetchTime = new Date();
-
-        // Render komponen UI
-        renderLiveCards(latest, resultData);
-        renderChart(resultData);
-        renderTable();
-
-      } catch (err) {
-        console.error('Fetch Telemetry Error:', err);
-        setConnectionStatus('error', 'Gagal Terhubung API');
-        const healthEl = document.getElementById('valLastTimeRelative');
-        if (healthEl) healthEl.textContent = 'API Error';
-        document.getElementById('deviceHealthDot').className = 'w-2 h-2 rounded-full bg-rose-500';
-      } finally {
-        setTimeout(() => refreshIcon.classList.remove('animate-spin'), 600);
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 4. Render Live Cards & Indeks Kenyamanan
-    // -------------------------------------------------------------------------
-    function renderLiveCards(latest, fullData) {
-      if (!latest) {
-        document.getElementById('valTemp').textContent = '--.-';
-        document.getElementById('valHum').textContent = '--.-';
-        document.getElementById('valDeviceId').textContent = 'Tidak Ada Data';
-        return;
-      }
-
-      const temp = parseFloat(latest.temperature);
-      const hum = parseFloat(latest.humidity);
-
-      document.getElementById('valTemp').textContent = temp.toFixed(1);
-      document.getElementById('valHum').textContent = hum.toFixed(1);
-      document.getElementById('valDeviceId').textContent = latest.device_id || 'ROOM_Server01';
-      document.getElementById('totalPointsCount').textContent = `${fullData.length} Data`;
-      document.getElementById('tableTotalRecordsBadge').textContent = `${fullData.length} Log`;
-
-      // Hitung Statistik Sesi (Min, Avg, Max)
-      if (fullData.length > 0) {
-        const temps = fullData.map(d => parseFloat(d.temperature)).filter(n => !isNaN(n));
-        const hums = fullData.map(d => parseFloat(d.humidity)).filter(n => !isNaN(n));
-
-        if (temps.length > 0) {
-          const minT = Math.min(...temps).toFixed(1);
-          const maxT = Math.max(...temps).toFixed(1);
-          const avgT = (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1);
-          document.getElementById('statTempMin').textContent = `${minT}°`;
-          document.getElementById('statTempAvg').textContent = `${avgT}°`;
-          document.getElementById('statTempMax').textContent = `${maxT}°`;
-        }
-
-        if (hums.length > 0) {
-          const minH = Math.min(...hums).toFixed(0);
-          const maxH = Math.max(...hums).toFixed(0);
-          const avgH = (hums.reduce((a, b) => a + b, 0) / hums.length).toFixed(0);
-          document.getElementById('statHumMin').textContent = `${minH}%`;
-          document.getElementById('statHumAvg').textContent = `${avgH}%`;
-          document.getElementById('statHumMax').textContent = `${maxH}%`;
-        }
-      }
-
-      // Hitung Titik Embun (Dew Point - Formula Magnus-Tetens)
-      const a = 17.27;
-      const b = 237.7;
-      const alpha = ((a * temp) / (b + temp)) + Math.log(hum / 100.0);
-      const dewPoint = (b * alpha) / (a - alpha);
-      document.getElementById('valDewPoint').textContent = `${dewPoint.toFixed(1)} °C`;
-
-      // Indeks Kenyamanan Udara
-      const comfortEl = document.getElementById('valComfortStatus');
-      const comfortDescEl = document.getElementById('valComfortDesc');
-
-      if (hum > 75) {
-        comfortEl.textContent = 'Terlalu Lembab';
-        comfortEl.className = 'text-2xl sm:text-3xl font-black text-rose-400 truncate';
-        comfortDescEl.textContent = 'Udara sangat lembab, rentan jamur & gerah';
-      } else if (hum < 35) {
-        comfortEl.textContent = 'Terlalu Kering';
-        comfortEl.className = 'text-2xl sm:text-3xl font-black text-amber-400 truncate';
-        comfortDescEl.textContent = 'Udara kering, disarankan gunakan humidifier';
-      } else if (temp >= 19 && temp <= 27 && hum >= 40 && hum <= 65) {
-        comfortEl.textContent = 'Sangat Nyaman';
-        comfortEl.className = 'text-2xl sm:text-3xl font-black text-emerald-400 truncate';
-        comfortDescEl.textContent = 'Kondisi iklim mikro optimal & ideal';
-      } else {
-        comfortEl.textContent = 'Cukup Normal';
-        comfortEl.className = 'text-2xl sm:text-3xl font-black text-teal-300 truncate';
-        comfortDescEl.textContent = 'Kondisi ruangan berada di batas wajar';
-      }
-
-      // Evaluasi Ambang Batas Suhu
-      const cardTemp = document.getElementById('cardTemp');
-      const badgeTemp = document.getElementById('badgeTempStatus');
-      let tempWarning = false;
-
-      if (temp > AppState.thresholds.tempMax) {
-        badgeTemp.textContent = 'Terlalu Panas';
-        badgeTemp.className = 'px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-rose-500/20 text-rose-300 border border-rose-500/40';
-        cardTemp.classList.add('border-rose-500/60', 'shadow-glow-rose');
-        tempWarning = true;
-      } else if (temp < AppState.thresholds.tempMin) {
-        badgeTemp.textContent = 'Terlalu Dingin';
-        badgeTemp.className = 'px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-blue-500/20 text-blue-300 border border-blue-500/40';
-        cardTemp.classList.add('border-blue-500/60');
-        tempWarning = true;
-      } else {
-        badgeTemp.textContent = 'Normal';
-        badgeTemp.className = 'px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-        cardTemp.classList.remove('border-rose-500/60', 'shadow-glow-rose', 'border-blue-500/60');
-      }
-
-      // Evaluasi Ambang Batas Kelembaban
-      const cardHum = document.getElementById('cardHum');
-      const badgeHum = document.getElementById('badgeHumStatus');
-      let humWarning = false;
-
-      if (hum > AppState.thresholds.humMax) {
-        badgeHum.textContent = 'Terlalu Lembab';
-        badgeHum.className = 'px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-rose-500/20 text-rose-300 border border-rose-500/40';
-        cardHum.classList.add('border-rose-500/60', 'shadow-glow-rose');
-        humWarning = true;
-      } else if (hum < AppState.thresholds.humMin) {
-        badgeHum.textContent = 'Terlalu Kering';
-        badgeHum.className = 'px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-amber-500/20 text-amber-300 border border-amber-500/40';
-        cardHum.classList.add('border-amber-500/60');
-        humWarning = true;
-      } else {
-        badgeHum.textContent = 'Optimal';
-        badgeHum.className = 'px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-        cardHum.classList.remove('border-rose-500/60', 'shadow-glow-rose', 'border-amber-500/60');
-      }
-
-      // Banner Peringatan Ambang Batas
-      const banner = document.getElementById('thresholdWarningBanner');
-      const bannerText = document.getElementById('thresholdWarningText');
-
-      if (tempWarning || humWarning) {
-        banner.classList.remove('hidden');
-        let msg = [];
-        if (tempWarning) msg.push(`Suhu ${temp.toFixed(1)}°C (Batas: ${AppState.thresholds.tempMin} - ${AppState.thresholds.tempMax}°C)`);
-        if (humWarning) msg.push(`Kelembaban ${hum.toFixed(1)}% (Batas: ${AppState.thresholds.humMin} - ${AppState.thresholds.humMax}%)`);
-        bannerText.textContent = `PERINGATAN: ${msg.join(' & ')} melampaui batas ambang normal!`;
-
-        if (AppState.soundAlert) {
-          playAlertBeep();
-        }
-      } else {
-        banner.classList.add('hidden');
-      }
-
-      evaluateSensorFreshness(latest.timestamp);
-    }
-
-    function evaluateSensorFreshness(timestampStr) {
-      const dot = document.getElementById('deviceHealthDot');
-      if (!timestampStr) return;
-
-      const recordTime = new Date(timestampStr.replace(/-/g, '/'));
-      const diffSec = Math.floor((new Date() - recordTime) / 1000);
-
-      if (isNaN(diffSec) || diffSec < 60) {
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-      } else if (diffSec < 180) {
-        dot.className = 'w-2 h-2 rounded-full bg-amber-400';
-      } else {
-        dot.className = 'w-2 h-2 rounded-full bg-rose-500';
-      }
-    }
-
-    function updateRelativeTimeTicker() {
-      if (!AppState.latestRecord || !AppState.latestRecord.timestamp) return;
-
-      const recordTime = new Date(AppState.latestRecord.timestamp.replace(/-/g, '/'));
-      const diffSec = Math.floor((new Date() - recordTime) / 1000);
-
-      const el = document.getElementById('valLastTimeRelative');
-      if (!el) return;
-
-      if (isNaN(diffSec) || diffSec < 0) {
-        el.textContent = 'Baru saja';
-      } else if (diffSec < 60) {
-        el.textContent = `${diffSec} dtk lalu`;
-      } else if (diffSec < 3600) {
-        el.textContent = `${Math.floor(diffSec / 60)} mnt lalu`;
-      } else {
-        el.textContent = `${Math.floor(diffSec / 3600)} jam lalu`;
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 5. Render Chart.js
-    // -------------------------------------------------------------------------
-    function renderChart(dataList) {
-      if (!AppState.chartInstance) return;
-
-      const sliceData = dataList.slice(-AppState.chartLimit);
-
-      const labels = sliceData.map(d => {
-        if (!d.timestamp) return '';
-        const parts = d.timestamp.split(' ');
-        return parts.length > 1 ? parts[1] : d.timestamp;
-      });
-
-      const tempData = sliceData.map(d => parseFloat(d.temperature));
-      const humData = sliceData.map(d => parseFloat(d.humidity));
-
-      AppState.chartInstance.data.labels = labels;
-      AppState.chartInstance.data.datasets[0].data = tempData;
-      AppState.chartInstance.data.datasets[1].data = humData;
-
-      AppState.chartInstance.update();
-    }
-
-    // -------------------------------------------------------------------------
-    // 6. ADVANCED TABLE LOGIC (SHOW VIEW, FILTER, SORT, PAGINATION)
+    // 6. Advanced Table Logic (Show View, Filter, Sort, Pagination)
     // -------------------------------------------------------------------------
     function getProcessedTableData() {
       let data = [...AppState.cachedData];
 
-      // 1. Filter Status
+      // 1. Filter Room
+      if (AppState.selectedRoomId !== 'all') {
+        data = data.filter(d => d.device_id === AppState.selectedRoomId);
+      }
+
+      // 2. Filter Status
       if (AppState.table.statusFilter === 'normal') {
         data = data.filter(d => !d.status || !d.status.toLowerCase().includes('warning'));
       } else if (AppState.table.statusFilter === 'warning') {
         data = data.filter(d => d.status && d.status.toLowerCase().includes('warning'));
       }
 
-      // 2. Search Query
+      // 3. Search Query
       if (AppState.table.searchQuery.trim() !== '') {
         const q = AppState.table.searchQuery.toLowerCase();
-        data = data.filter(d =>
-          (d.timestamp && d.timestamp.toLowerCase().includes(q)) ||
-          (d.device_id && d.device_id.toLowerCase().includes(q)) ||
-          (d.status && d.status.toLowerCase().includes(q)) ||
-          String(d.temperature).includes(q) ||
-          String(d.humidity).includes(q)
-        );
+        data = data.filter(d => {
+          const dev = AppState.devices.find(x => x.device_id === d.device_id);
+          const devName = dev ? dev.name.toLowerCase() : '';
+          return (
+            (d.timestamp && d.timestamp.toLowerCase().includes(q)) ||
+            (d.device_id && d.device_id.toLowerCase().includes(q)) ||
+            devName.includes(q) ||
+            (d.status && d.status.toLowerCase().includes(q)) ||
+            String(d.temperature).includes(q) ||
+            String(d.humidity).includes(q)
+          );
+        });
       }
 
-      // 3. Sorting
+      // 4. Sorting
       data.sort((a, b) => {
         let valA, valB;
         if (AppState.table.sortKey === 'timestamp') {
-          valA = new Date(a.timestamp || 0).getTime();
-          valB = new Date(b.timestamp || 0).getTime();
+          valA = new Date((a.timestamp || '').replace(/-/g, '/')).getTime() || 0;
+          valB = new Date((b.timestamp || '').replace(/-/g, '/')).getTime() || 0;
         } else if (AppState.table.sortKey === 'temperature') {
           valA = parseFloat(a.temperature) || 0;
           valB = parseFloat(b.temperature) || 0;
@@ -1207,7 +1423,6 @@
           valA = parseFloat(a.humidity) || 0;
           valB = parseFloat(b.humidity) || 0;
         } else {
-          // Default: index urutan kronologis terbaru di atas
           valA = a.timestamp;
           valB = b.timestamp;
         }
@@ -1227,10 +1442,11 @@
       const processed = getProcessedTableData();
       const totalRows = processed.length;
 
+      document.getElementById('tableTotalRecordsBadge').textContent = `${totalRows} Data`;
+
       const pageSize = AppState.table.pageSize === 'all' ? totalRows : parseInt(AppState.table.pageSize, 10);
       const totalPages = pageSize > 0 ? Math.ceil(totalRows / pageSize) : 1;
 
-      // Koreksi jika current page melebihi total pages
       if (AppState.table.currentPage > totalPages) {
         AppState.table.currentPage = Math.max(1, totalPages);
       }
@@ -1239,7 +1455,6 @@
       const endIndex = AppState.table.pageSize === 'all' ? totalRows : Math.min(startIndex + pageSize, totalRows);
       const displayData = processed.slice(startIndex, endIndex);
 
-      // Update Teks Informasi Pagination
       const paginationInfo = document.getElementById('tablePaginationInfo');
       if (totalRows === 0) {
         paginationInfo.innerHTML = `Tidak ada data yang cocok.`;
@@ -1256,6 +1471,9 @@
           const hum = parseFloat(item.humidity).toFixed(1);
           const isWarning = item.status && item.status.toLowerCase().includes('warning');
 
+          const dev = AppState.devices.find(x => x.device_id === item.device_id);
+          const devName = dev ? dev.name : item.device_id;
+
           const statusBadge = isWarning
             ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 inline-flex items-center gap-1">
                  <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>${item.status}
@@ -1268,7 +1486,10 @@
             <tr class="hover:bg-slate-800/50 transition">
               <td class="px-4 py-3 text-slate-500">${rowNumber}</td>
               <td class="px-4 py-3 text-slate-200 font-semibold">${item.timestamp}</td>
-              <td class="px-4 py-3 font-semibold text-teal-300">${item.device_id || '-'}</td>
+              <td class="px-4 py-3">
+                <span class="font-bold text-teal-300">${devName}</span>
+                <span class="text-[10px] text-slate-500 font-mono ml-1">(${item.device_id || '-'})</span>
+              </td>
               <td class="px-4 py-3 font-bold text-orange-400">${temp} °C</td>
               <td class="px-4 py-3 font-bold text-cyan-400">${hum} %</td>
               <td class="px-4 py-3 font-sans">${statusBadge}</td>
@@ -1277,7 +1498,6 @@
         }).join('');
       }
 
-      // Render Tombol Pagination
       renderPaginationControls(totalPages);
     }
 
@@ -1346,10 +1566,12 @@
 
       ['All', 'Normal', 'Warning'].forEach(s => {
         const btn = document.getElementById(`btnFilter${s}`);
-        if (s.toLowerCase() === status) {
-          btn.className = 'px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30 transition text-[11px]';
-        } else {
-          btn.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition text-[11px]';
+        if (btn) {
+          if (s.toLowerCase() === status) {
+            btn.className = 'px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30 transition text-[11px]';
+          } else {
+            btn.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition text-[11px]';
+          }
         }
       });
 
@@ -1366,171 +1588,509 @@
       renderTable();
     }
 
-    // -------------------------------------------------------------------------
-    // 7. Ekspor CSV dengan UTF-8 BOM
-    // -------------------------------------------------------------------------
     function exportToCsv() {
       const dataToExport = getProcessedTableData();
-      if (!dataToExport || dataToExport.length === 0) {
-        alert('Tidak ada data riwayat untuk diekspor!');
+      if (dataToExport.length === 0) {
+        alert('Tidak ada data untuk diekspor!');
         return;
       }
 
-      const headers = ['Timestamp', 'Device ID', 'Temperature (C)', 'Humidity (%RH)', 'Status'];
-      const csvRows = [headers.join(',')];
+      let csv = '\uFEFF'; // BOM UTF-8
+      csv += 'No,Timestamp,Device_ID,Nama_Ruangan,Temperature_C,Humidity_RH,Status\r\n';
 
-      dataToExport.forEach(row => {
-        const values = [
-          `"${row.timestamp || ''}"`,
-          `"${row.device_id || ''}"`,
-          row.temperature,
-          row.humidity,
-          `"${row.status || ''}"`
-        ];
-        csvRows.push(values.join(','));
+      dataToExport.forEach((item, index) => {
+        const dev = AppState.devices.find(x => x.device_id === item.device_id);
+        const devName = dev ? dev.name : item.device_id;
+        const line = [
+          index + 1,
+          `"${item.timestamp}"`,
+          `"${item.device_id}"`,
+          `"${devName}"`,
+          item.temperature,
+          item.humidity,
+          `"${item.status || 'Normal'}"`
+        ].join(',');
+        csv += line + '\r\n';
       });
 
-      const csvContent = '\uFEFF' + csvRows.join('\r\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-
-      const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10);
-      const filename = `iot-telemetry-ROOM_Server01-${dateStr}.csv`;
-
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      link.setAttribute('download', filename);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.setAttribute('download', `IoT_EcoSense_Log_${dateStr}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
     }
 
     // -------------------------------------------------------------------------
-    // 8. Auto-Refresh Polling Scheduler
+    // 7. Polling Engine & Google Apps Script Fetch
     // -------------------------------------------------------------------------
+    async function fetchTelemetryData() {
+      if (AppState.isPaused) return;
+
+      const refreshIcon = document.getElementById('iconRefresh');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+      if (AppState.demoMode) {
+        simulateIncomingData();
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+        return;
+      }
+
+      try {
+        const url = `${AppState.gasUrl}?action=all&limit=250&_t=${Date.now()}`;
+        const response = await fetch(url, { method: 'GET', mode: 'cors' });
+
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          updateConnectionStatus(true);
+
+          // 1. Perbarui Registry Perangkat jika disediakan oleh server
+          if (result.devices && Array.isArray(result.devices) && result.devices.length > 0) {
+            AppState.devices = result.devices;
+            localStorage.setItem('iot_device_registry', JSON.stringify(AppState.devices));
+            renderRoomNavigationTabs();
+          }
+
+          // 2. Cache Riwayat Data
+          if (Array.isArray(result.data)) {
+            AppState.cachedData = result.data;
+          }
+
+          // 3. Render Views
+          renderMultiRoomGrid();
+          if (AppState.selectedRoomId !== 'all') {
+            renderSingleRoomKPI(AppState.selectedRoomId);
+          }
+          renderChart();
+          renderTable();
+
+          // 4. Periksa Alarm Warning
+          checkForActiveAlerts();
+
+        } else {
+          updateConnectionStatus(false, result.message || 'API merespon error');
+        }
+
+      } catch (err) {
+        console.error('Fetch error:', err);
+        updateConnectionStatus(false, 'Gagal terhubung ke API');
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+      }
+    }
+
     function startPollingScheduler() {
       if (AppState.pollTimer) clearInterval(AppState.pollTimer);
       if (AppState.countdownTimer) clearInterval(AppState.countdownTimer);
 
       AppState.countdownLeft = AppState.pollIntervalSec;
-      updateCountdownUI();
+      updateCountdownDisplay();
 
       AppState.countdownTimer = setInterval(() => {
-        if (AppState.isPaused) return;
-
-        AppState.countdownLeft--;
-        if (AppState.countdownLeft <= 0) {
-          AppState.countdownLeft = AppState.pollIntervalSec;
-          fetchTelemetryData();
+        if (!AppState.isPaused) {
+          AppState.countdownLeft--;
+          if (AppState.countdownLeft <= 0) {
+            AppState.countdownLeft = AppState.pollIntervalSec;
+            fetchTelemetryData();
+          }
+          updateCountdownDisplay();
         }
-        updateCountdownUI();
       }, 1000);
     }
 
     function resetCountdown() {
       AppState.countdownLeft = AppState.pollIntervalSec;
-      updateCountdownUI();
+      updateCountdownDisplay();
     }
 
-    function updateCountdownUI() {
-      const label = document.getElementById('countdownSec');
-      if (label) label.textContent = `${AppState.countdownLeft}s`;
+    function updateCountdownDisplay() {
+      const el = document.getElementById('countdownSecondsText');
+      if (el) el.textContent = `${AppState.countdownLeft}s`;
     }
 
     function togglePauseResume() {
       AppState.isPaused = !AppState.isPaused;
-      const btn = document.getElementById('btnPauseResume');
       const iconPause = document.getElementById('iconPause');
       const iconPlay = document.getElementById('iconPlay');
+      const pillText = document.getElementById('connectionStatusText');
 
       if (AppState.isPaused) {
         iconPause.classList.add('hidden');
         iconPlay.classList.remove('hidden');
-        setConnectionStatus('paused', 'Dijeda');
+        if (pillText) pillText.textContent = 'Dijeda (Paused)';
       } else {
-        iconPause.classList.remove('hidden');
         iconPlay.classList.add('hidden');
-        resetCountdown();
+        iconPause.classList.remove('hidden');
+        if (pillText) pillText.textContent = 'Terkoneksi (Live)';
         fetchTelemetryData();
+        resetCountdown();
       }
     }
 
-    function setConnectionStatus(type, label) {
-      const dot = document.getElementById('connectionDot');
-      const dotRing = document.getElementById('connectionDotRing');
-      const text = document.getElementById('connectionText');
-      text.textContent = label;
+    function updateConnectionStatus(isOnline, message = '') {
+      const pillText = document.getElementById('connectionStatusText');
+      const ring = document.getElementById('statusPulseRing');
+      const dot = document.getElementById('statusPulseDot');
 
-      if (type === 'online') {
-        dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400';
-        dotRing.className = 'pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
-      } else if (type === 'demo') {
-        dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-400';
-        dotRing.className = 'absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-0';
-      } else if (type === 'paused') {
-        dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400';
-        dotRing.className = 'absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-0';
+      if (isOnline) {
+        if (pillText) pillText.textContent = 'Terkoneksi (Live)';
+        if (ring) ring.className = 'pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
+        if (dot) dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500';
       } else {
-        dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500';
-        dotRing.className = 'pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75';
+        if (pillText) pillText.textContent = message || 'Offline';
+        if (ring) ring.className = 'hidden';
+        if (dot) dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500';
       }
     }
 
-    // -------------------------------------------------------------------------
-    // 9. Audio Alert Synthesizer (Web Audio API)
-    // -------------------------------------------------------------------------
-    function playAlertBeep() {
+    function checkForActiveAlerts() {
+      let activeWarnings = [];
+      AppState.devices.forEach(dev => {
+        const devLogs = AppState.cachedData.filter(d => d.device_id === dev.device_id);
+        if (devLogs.length > 0) {
+          const latest = devLogs[devLogs.length - 1];
+          if (latest.status && latest.status.toLowerCase().includes('warning')) {
+            activeWarnings.push(`${dev.name} (${latest.status})`);
+          }
+        }
+      });
+
+      const banner = document.getElementById('globalAlertBanner');
+      const msg = document.getElementById('globalAlertMessage');
+
+      if (activeWarnings.length > 0) {
+        banner.classList.remove('hidden');
+        msg.textContent = `PERINGATAN: ${activeWarnings.join(' • ')}`;
+        if (AppState.soundAlert) playBeepAlarm();
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function dismissAlertBanner() {
+      document.getElementById('globalAlertBanner').classList.add('hidden');
+    }
+
+    function playBeepAlarm() {
       try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
         osc.connect(gain);
-        gain.connect(ctx.destination);
-
+        gain.connect(audioCtx.destination);
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         osc.start();
-        osc.stop(ctx.currentTime + 0.35);
-      } catch (e) {
-        console.warn('Audio Alert Error:', e);
-      }
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) { }
     }
 
     // -------------------------------------------------------------------------
-    // 10. Pengaturan & LocalStorage UI
+    // 8. Device Manager Modal (Dynamic Provisioning & Naming)
+    // -------------------------------------------------------------------------
+    function openDeviceManagerModal(highlightDeviceId = null) {
+      renderDeviceManagerList(highlightDeviceId);
+      document.getElementById('deviceManagerModal').classList.remove('hidden');
+      if (highlightDeviceId) {
+        setTimeout(() => {
+          const el = document.getElementById(`devCard_${highlightDeviceId}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 150);
+      }
+    }
+
+    function openDeviceEditModal(roomId) {
+      openDeviceManagerModal(roomId);
+    }
+
+    function formatIntervalHint(sec) {
+      sec = parseInt(sec, 10);
+      if (isNaN(sec) || sec <= 0) return '';
+      if (sec < 60) return `= ${sec} Detik`;
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return s > 0 ? `= ${m}m ${s}s` : `= ${m} Menit`;
+    }
+
+    function formatIntervalBadge(sec) {
+      sec = parseInt(sec, 10) || 10;
+      if (sec < 60) return `${sec}s`;
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return s > 0 ? `${sec}s (${m}m ${s}s)` : `${sec}s (${m}m)`;
+    }
+
+    function updateIntervalHint(devId, val) {
+      const el = document.getElementById(`devIntervalHint_${devId}`);
+      if (el) el.textContent = formatIntervalHint(val);
+    }
+
+    function setIntervalPreset(devId, val) {
+      const input = document.getElementById(`devInterval_${devId}`);
+      if (input) {
+        input.value = val;
+        updateIntervalHint(devId, val);
+      }
+    }
+
+    function closeDeviceManagerModal() {
+      document.getElementById('deviceManagerModal').classList.add('hidden');
+    }
+
+    function renderDeviceManagerList(highlightDeviceId = null) {
+      const container = document.getElementById('deviceManagerListContainer');
+      if (!container) return;
+
+      let html = '';
+      AppState.devices.forEach((dev, idx) => {
+        const isHighlighted = highlightDeviceId === dev.device_id;
+        const borderClass = isHighlighted
+          ? 'border-teal-400 shadow-glow-teal ring-2 ring-teal-500/50 bg-slate-800/90'
+          : 'border-slate-700 bg-slate-800/80';
+
+        html += `
+          <div id="devCard_${dev.device_id}" class="p-4 rounded-2xl ${borderClass} space-y-3 transition-all duration-300">
+            
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full ${dev.is_online ? 'bg-emerald-400' : 'bg-slate-500'}"></span>
+                <span class="font-bold text-white text-sm">Alat #${idx + 1}</span>
+                <span class="text-xs font-mono text-teal-300 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">${dev.device_id}</span>
+                ${isHighlighted ? '<span class="px-2 py-0.2 rounded-full text-[10px] font-bold bg-teal-500 text-slate-950">Sedang Dipantau</span>' : ''}
+              </div>
+              <span class="text-[11px] text-slate-400">${dev.is_online ? 'Online' : 'Offline'}</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label class="block font-semibold text-teal-300 mb-1 flex items-center justify-between">
+                  <span>Device ID (Alat)</span>
+                  <span class="text-[10px] text-slate-400 font-mono">Hardware ID</span>
+                </label>
+                <input type="text" id="devIdInput_${dev.device_id}" value="${dev.device_id}" placeholder="misal: ROOM_01" class="w-full px-3 py-1.5 bg-slate-900 border border-teal-500/40 rounded-xl text-teal-300 font-mono font-bold focus:outline-none focus:border-teal-400">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Nama Ruangan / Alias</label>
+                <input type="text" id="devName_${dev.device_id}" value="${dev.name || ''}" placeholder="misal: Ruang Server Utama" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-teal-500">
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="font-semibold text-slate-300">Interval Alat (Cloud Sync)</label>
+                  <!--<span id="devIntervalHint_${dev.device_id}" class="text-[11px] text-teal-400 font-mono font-bold">
+                  </span>-->
+                </div>
+                <div class="relative">
+                  <input type="number" id="devInterval_${dev.device_id}" value="${dev.send_interval_sec || 10}" min="3" max="3600" step="1"
+                    oninput="updateIntervalHint('${dev.device_id}', this.value)"
+                    placeholder="Bebas isi misal: 10, 45, 300..."
+                    class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 font-mono font-bold focus:outline-none focus:border-teal-500 pr-14">
+                  <span class="absolute right-3 top-1.5 text-xs text-slate-400 pointer-events-none">detik</span>
+                </div>
+                <!-- Preset Pilihan Cepat -->
+                <!--<div class="flex flex-wrap gap-1 mt-1.5">
+                  <button type="button" onclick="setIntervalPreset('${dev.device_id}', 5)" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-teal-600/30 text-[10px] text-slate-300 hover:text-teal-300 border border-slate-700 transition">5s</button>
+                  <button type="button" onclick="setIntervalPreset('${dev.device_id}', 10)" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-teal-600/30 text-[10px] text-slate-300 hover:text-teal-300 border border-slate-700 transition">10s</button>
+                  <button type="button" onclick="setIntervalPreset('${dev.device_id}', 30)" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-teal-600/30 text-[10px] text-slate-300 hover:text-teal-300 border border-slate-700 transition">30s</button>
+                  <button type="button" onclick="setIntervalPreset('${dev.device_id}', 60)" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-teal-600/30 text-[10px] text-slate-300 hover:text-teal-300 border border-slate-700 transition">1m (60s)</button>
+                  <button type="button" onclick="setIntervalPreset('${dev.device_id}', 120)" class="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-teal-600/30 text-[10px] text-slate-300 hover:text-teal-300 border border-slate-700 transition">2m (120s)</button>
+                  <button type="button" onclick="setIntervalPreset('${dev.device_id}', 300)" class="px-2 py-0.5 rounded-md bg-teal-500/20 hover:bg-teal-600/40 text-[10px] text-teal-300 font-bold border border-teal-500/40 transition">5m (300s)</button>
+                </div> -->
+              </div>
+            </div>
+
+            <!-- Thresholds for this device -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
+              <div>
+                <span class="text-[10px] text-slate-400 block">Suhu Min (°C)</span>
+                <input type="number" id="devTempMin_${dev.device_id}" value="${dev.temp_min}" step="0.5" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">Suhu Max (°C)</span>
+                <input type="number" id="devTempMax_${dev.device_id}" value="${dev.temp_max}" step="0.5" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">Hum Min (%)</span>
+                <input type="number" id="devHumMin_${dev.device_id}" value="${dev.hum_min}" step="1" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">Hum Max (%)</span>
+                <input type="number" id="devHumMax_${dev.device_id}" value="${dev.hum_max}" step="1" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 font-mono">
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-3 border-t border-slate-700/60 mt-2">
+              <button onclick="deleteDevice('${dev.device_id}', '${(dev.name || dev.device_id).replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <span>Hapus Ruangan</span>
+              </button>
+
+              <div class="flex items-center space-x-2">
+                <span id="saveStatus_${dev.device_id}" class="text-[11px] text-teal-400"></span>
+                <button onclick="saveSingleDeviceConfig('${dev.device_id}')" class="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs transition shadow-sm">
+                  Simpan Ruangan Ini
+                </button>
+              </div>
+            </div>
+
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    async function deleteDevice(deviceId, deviceName) {
+      if (!confirm(`Apakah Anda yakin ingin menghapus '${deviceName}' (${deviceId}) dari daftar pemantauan ruangan?`)) {
+        return;
+      }
+
+      // 1. Hapus dari AppState.devices lokal
+      AppState.devices = AppState.devices.filter(d => d.device_id !== deviceId);
+      localStorage.setItem('iot_device_registry', JSON.stringify(AppState.devices));
+
+      // 2. Jika sedang membuka detail ruangan yang dihapus, alihkan ke 'all'
+      if (AppState.selectedRoomId === deviceId) {
+        selectRoom('all');
+      }
+
+      // 3. Render ulang tampilan
+      renderDeviceManagerList();
+      renderRoomNavigationTabs();
+      renderMultiRoomGrid();
+      renderChart();
+      renderTable();
+
+      // 4. Kirim request hapus ke Google Apps Script (jika live)
+      if (!AppState.demoMode) {
+        try {
+          const url = `${AppState.gasUrl}?action=delete_device&device_id=${encodeURIComponent(deviceId)}&_t=${Date.now()}`;
+          const res = await fetch(url, { method: 'GET', mode: 'cors' });
+          const json = await res.json();
+          if (json.status === 'success') {
+            console.log(`[DEVICE] Perangkat ${deviceId} berhasil dihapus dari cloud.`);
+          }
+        } catch (err) {
+          console.warn('Gagal menghapus dari cloud (tetap terhapus di lokal):', err);
+        }
+      }
+    }
+
+    async function saveSingleDeviceConfig(oldDeviceId) {
+      const dev = AppState.devices.find(d => d.device_id === oldDeviceId);
+      if (!dev) return;
+
+      const rawNewId = document.getElementById(`devIdInput_${oldDeviceId}`).value.trim();
+      const newDeviceId = rawNewId ? rawNewId.replace(/\s+/g, '_') : oldDeviceId;
+      const isIdRenamed = newDeviceId !== oldDeviceId;
+
+      const newName = document.getElementById(`devName_${oldDeviceId}`).value.trim() || newDeviceId;
+      let newInterval = parseInt(document.getElementById(`devInterval_${oldDeviceId}`).value, 10);
+      if (isNaN(newInterval) || newInterval < 3) newInterval = 3;
+      if (newInterval > 3600) newInterval = 3600;
+      const newTempMin = parseFloat(document.getElementById(`devTempMin_${oldDeviceId}`).value);
+      const newTempMax = parseFloat(document.getElementById(`devTempMax_${oldDeviceId}`).value);
+      const newHumMin = parseFloat(document.getElementById(`devHumMin_${oldDeviceId}`).value);
+      const newHumMax = parseFloat(document.getElementById(`devHumMax_${oldDeviceId}`).value);
+
+      // Perbarui object di RAM
+      dev.device_id = newDeviceId;
+      dev.name = newName;
+      dev.send_interval_sec = newInterval;
+      dev.temp_min = newTempMin;
+      dev.temp_max = newTempMax;
+      dev.hum_min = newHumMin;
+      dev.hum_max = newHumMax;
+
+      // Jika Device ID diubah, update juga log data historis di cache
+      if (isIdRenamed) {
+        AppState.cachedData.forEach(d => {
+          if (d.device_id === oldDeviceId) d.device_id = newDeviceId;
+        });
+        if (AppState.selectedRoomId === oldDeviceId) {
+          AppState.selectedRoomId = newDeviceId;
+        }
+      }
+
+      localStorage.setItem('iot_device_registry', JSON.stringify(AppState.devices));
+      renderRoomNavigationTabs();
+      renderMultiRoomGrid();
+      if (AppState.selectedRoomId === newDeviceId) renderSingleRoomKPI(newDeviceId);
+      renderTable();
+      renderDeviceManagerList(newDeviceId);
+
+      const statusEl = document.getElementById(`saveStatus_${newDeviceId}`);
+      if (statusEl) statusEl.textContent = 'Menyinkronkan ke Cloud...';
+
+      if (!AppState.demoMode) {
+        try {
+          const actionParam = isIdRenamed ? 'rename_device' : 'set_device';
+          const url = `${AppState.gasUrl}?action=${actionParam}&old_id=${encodeURIComponent(oldDeviceId)}&new_id=${encodeURIComponent(newDeviceId)}&device_id=${encodeURIComponent(newDeviceId)}&name=${encodeURIComponent(newName)}&interval=${newInterval}&temp_min=${newTempMin}&temp_max=${newTempMax}&hum_min=${newHumMin}&hum_max=${newHumMax}&_t=${Date.now()}`;
+          const res = await fetch(url, { method: 'GET', mode: 'cors' });
+          const json = await res.json();
+          if (json.status === 'success') {
+            if (statusEl) {
+              statusEl.textContent = isIdRenamed
+                ? `✓ ID diubah ke ${newDeviceId} & tersimpan!`
+                : '✓ Tersimpan di Cloud!';
+            }
+            setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3500);
+          } else {
+            if (statusEl) statusEl.textContent = 'Gagal menyimpan ke server.';
+          }
+        } catch (err) {
+          if (statusEl) statusEl.textContent = 'Gagal koneksi API (tersimpan lokal).';
+        }
+      } else {
+        if (statusEl) statusEl.textContent = isIdRenamed ? `✓ ID diubah ke ${newDeviceId} (Demo)!` : '✓ Tersimpan (Demo Mode)!';
+        setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3500);
+      }
+    }
+
+    function addNewDummyDeviceForTesting() {
+      const count = AppState.devices.length + 1;
+      const newId = `ROOM_0${count}`;
+      const newDev = {
+        device_id: newId,
+        name: count === 2 ? 'Ruang Laboratorium' : (count === 3 ? 'Ruang Kantor' : `Ruang #${count}`),
+        send_interval_sec: count === 2 ? 15 : 30,
+        temp_min: 19.0,
+        temp_max: 29.0,
+        hum_min: 40.0,
+        hum_max: 70.0,
+        last_seen: 'Baru ditambahkan',
+        latest_temp: 26.5 + count * 0.8,
+        latest_hum: 58.0 + count * 2.0,
+        latest_status: 'Normal',
+        is_online: true
+      };
+
+      AppState.devices.push(newDev);
+      localStorage.setItem('iot_device_registry', JSON.stringify(AppState.devices));
+      renderDeviceManagerList();
+      renderRoomNavigationTabs();
+      renderMultiRoomGrid();
+      renderChart();
+    }
+
+    // -------------------------------------------------------------------------
+    // 9. Settings Modal & Test Connection
     // -------------------------------------------------------------------------
     function initSettingsUI() {
       document.getElementById('cfgGasUrl').value = AppState.gasUrl;
-      const intInput = document.getElementById('cfgInterval');
-      if (intInput) intInput.value = AppState.pollIntervalSec;
-      document.getElementById('cfgSoundAlert').value = AppState.soundAlert ? 'true' : 'false';
-      document.getElementById('cfgTempMin').value = AppState.thresholds.tempMin;
-      document.getElementById('cfgTempMax').value = AppState.thresholds.tempMax;
-      document.getElementById('cfgHumMin').value = AppState.thresholds.humMin;
-      document.getElementById('cfgHumMax').value = AppState.thresholds.humMax;
-
-      const pageSizeSelect = document.getElementById('tablePageSizeSelect');
-      if (pageSizeSelect) pageSizeSelect.value = String(AppState.table.pageSize);
-    }
-
-    function updateThresholdLabels() {
-      document.getElementById('labelTempThreshold').textContent =
-        `${AppState.thresholds.tempMin} - ${AppState.thresholds.tempMax} °C`;
-      document.getElementById('labelHumThreshold').textContent =
-        `${AppState.thresholds.humMin} - ${AppState.thresholds.humMax} %`;
+      document.getElementById('cfgInterval').value = String(AppState.pollIntervalSec);
+      document.getElementById('cfgSoundAlert').value = String(AppState.soundAlert);
     }
 
     function openSettingsModal() {
       initSettingsUI();
-      document.getElementById('testConnResult').textContent = '';
       document.getElementById('settingsModal').classList.remove('hidden');
     }
 
@@ -1539,160 +2099,132 @@
     }
 
     function saveSettings() {
-      const gasUrl = document.getElementById('cfgGasUrl').value.trim();
-      const intervalEl = document.getElementById('cfgInterval');
-      const interval = intervalEl ? parseInt(intervalEl.value, 10) : 30;
-      const soundAlert = document.getElementById('cfgSoundAlert').value === 'true';
-      const tempMin = parseFloat(document.getElementById('cfgTempMin').value) || 18.0;
-      const tempMax = parseFloat(document.getElementById('cfgTempMax').value) || 30.0;
-      const humMin = parseFloat(document.getElementById('cfgHumMin').value) || 40.0;
-      const humMax = parseFloat(document.getElementById('cfgHumMax').value) || 70.0;
+      const url = document.getElementById('cfgGasUrl').value.trim();
+      const interval = parseInt(document.getElementById('cfgInterval').value, 10);
+      const sound = document.getElementById('cfgSoundAlert').value === 'true';
 
-      AppState.gasUrl = gasUrl;
-      AppState.pollIntervalSec = interval;
-      AppState.soundAlert = soundAlert;
-      AppState.thresholds = { tempMin, tempMax, humMin, humMax };
-
-      localStorage.setItem('iot_gas_url', gasUrl);
-      localStorage.setItem('iot_poll_interval', interval);
-      localStorage.setItem('iot_sound_alert', soundAlert);
-      localStorage.setItem('iot_temp_min', tempMin);
-      localStorage.setItem('iot_temp_max', tempMax);
-      localStorage.setItem('iot_hum_min', humMin);
-      localStorage.setItem('iot_hum_max', humMax);
-
-      updateThresholdLabels();
-      closeSettingsModal();
-      startPollingScheduler();
-      resetCountdown();
-
-      // SINKRONISASI DUA ARAH KE CLOUD & ESP32 (REMOTE CONFIG SYNC)
-      if (gasUrl) {
-        const syncUrl = gasUrl.includes('?')
-          ? `${gasUrl}&action=set_config&interval=${interval}&temp_min=${tempMin}&temp_max=${tempMax}&hum_min=${humMin}&hum_max=${humMax}`
-          : `${gasUrl}?action=set_config&interval=${interval}&temp_min=${tempMin}&temp_max=${tempMax}&hum_min=${humMin}&hum_max=${humMax}`;
-
-        console.log('[REMOTE CONFIG] Mengirim konfigurasi baru ke Cloud:', syncUrl);
-        fetch(syncUrl, { method: 'GET', redirect: 'follow' })
-          .then(res => res.json())
-          .then(data => {
-            console.log('[REMOTE CONFIG] Sukses tersimpan di Google Spreadsheet (Sheet Config):', data);
-          })
-          .catch(err => {
-            console.warn('[REMOTE CONFIG] Gagal sinkronisasi ke Cloud:', err);
-          });
+      if (!url) {
+        alert('URL Google Apps Script tidak boleh kosong!');
+        return;
       }
 
+      AppState.gasUrl = url;
+      AppState.pollIntervalSec = interval;
+      AppState.soundAlert = sound;
+
+      localStorage.setItem('iot_gas_url', url);
+      localStorage.setItem('iot_poll_interval', interval);
+      localStorage.setItem('iot_sound_alert', sound);
+
+      closeSettingsModal();
+      startPollingScheduler();
       fetchTelemetryData();
     }
 
     async function testGasConnection() {
       const url = document.getElementById('cfgGasUrl').value.trim();
-      const resultSpan = document.getElementById('testConnResult');
-
-      if (!url) {
-        resultSpan.textContent = 'Harap isi URL!';
-        resultSpan.className = 'text-rose-400 font-semibold';
-        return;
-      }
-
-      resultSpan.textContent = 'Menguji...';
-      resultSpan.className = 'text-teal-400 font-semibold animate-pulse';
+      const resSpan = document.getElementById('testConnResult');
+      resSpan.textContent = 'Menguji...';
+      resSpan.className = 'text-amber-400 font-semibold';
 
       try {
-        const testUrl = url.includes('?') ? `${url}&action=latest` : `${url}?action=latest`;
-        const start = performance.now();
-        const res = await fetch(testUrl, { method: 'GET', redirect: 'follow' });
-        const latency = Math.round(performance.now() - start);
-
-        if (res.ok) {
-          resultSpan.textContent = `Sukses (${latency}ms)`;
-          resultSpan.className = 'text-emerald-400 font-semibold';
+        const res = await fetch(`${url}?action=latest&_t=${Date.now()}`, { method: 'GET', mode: 'cors' });
+        const json = await res.json();
+        if (json.status === 'success') {
+          resSpan.textContent = '✓ Terhubung!';
+          resSpan.className = 'text-emerald-400 font-semibold';
         } else {
-          resultSpan.textContent = `HTTP ${res.status}`;
-          resultSpan.className = 'text-rose-400 font-semibold';
+          resSpan.textContent = 'Server merespon non-success';
+          resSpan.className = 'text-rose-400 font-semibold';
         }
       } catch (e) {
-        resultSpan.textContent = 'Gagal (CORS/URL Salah)';
-        resultSpan.className = 'text-rose-400 font-semibold';
+        resSpan.textContent = 'Gagal menghubungi server';
+        resSpan.className = 'text-rose-400 font-semibold';
       }
     }
 
     // -------------------------------------------------------------------------
-    // 11. Mock & Demo Mode
+    // 10. Demo Mode Simulator
     // -------------------------------------------------------------------------
-    function checkDemoModeUI() {
-      const banner = document.getElementById('demoModeBanner');
-      const btn = document.getElementById('btnToggleDemo');
-      if (AppState.demoMode) {
-        banner.classList.remove('hidden');
-        btn.textContent = 'Matikan Demo Mode';
-        btn.className = 'text-rose-400 hover:text-rose-300 font-semibold text-xs';
-      } else {
-        banner.classList.add('hidden');
-        btn.textContent = 'Nyalakan Demo Mode';
-        btn.className = 'text-indigo-400 hover:text-indigo-300 font-semibold text-xs';
-      }
-    }
-
     function toggleDemoMode() {
       AppState.demoMode = !AppState.demoMode;
       localStorage.setItem('iot_demo_mode', AppState.demoMode);
       checkDemoModeUI();
+      closeSettingsModal();
       fetchTelemetryData();
     }
 
-    function disableDemoMode() {
-      AppState.demoMode = false;
-      localStorage.setItem('iot_demo_mode', false);
-      checkDemoModeUI();
-      fetchTelemetryData();
+    function checkDemoModeUI() {
+      const btn = document.getElementById('btnToggleDemo');
+      if (btn) {
+        btn.textContent = AppState.demoMode ? 'Matikan Demo Mode (Kembali ke Live)' : 'Nyalakan Demo Mode';
+      }
     }
 
-    let mockSessionHistory = [];
-    function generateMockTelemetry() {
+    function simulateIncomingData() {
+      updateConnectionStatus(true);
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
       const timeStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-      if (mockSessionHistory.length === 0) {
+      // Pastikan ada 3 ruangan di demo mode jika belum ada
+      if (AppState.devices.length < 3) {
+        AppState.devices = [
+          { device_id: 'ROOM_Server01', name: 'Ruang Server Utama', send_interval_sec: 5, temp_min: 18, temp_max: 27, hum_min: 40, hum_max: 70, is_online: true },
+          { device_id: 'ROOM_Lab02', name: 'Ruang Laboratorium', send_interval_sec: 15, temp_min: 19, temp_max: 28, hum_min: 45, hum_max: 65, is_online: true },
+          { device_id: 'ROOM_Kantor03', name: 'Ruang Kantor Admin', send_interval_sec: 30, temp_min: 20, temp_max: 30, hum_min: 35, hum_max: 70, is_online: true }
+        ];
+        renderRoomNavigationTabs();
+      }
+
+      // Generate history jika kosong
+      if (AppState.cachedData.length === 0) {
         for (let i = 40; i >= 1; i--) {
           const past = new Date(now.getTime() - i * 30000);
           const pStr = `${past.getFullYear()}-${pad(past.getMonth() + 1)}-${pad(past.getDate())} ${pad(past.getHours())}:${pad(past.getMinutes())}:${pad(past.getSeconds())}`;
-          const t = 29.5 + (Math.sin(i * 0.4) * 1.5);
-          const h = 78 + (Math.cos(i * 0.4) * 8);
-          const isWarn = t > AppState.thresholds.tempMax || h > AppState.thresholds.humMax;
-          mockSessionHistory.push({
-            timestamp: pStr,
-            device_id: 'ROOM_Server01',
-            temperature: parseFloat(t.toFixed(1)),
-            humidity: parseFloat(h.toFixed(1)),
-            status: isWarn ? 'Warning: Kelembaban Tinggi' : 'Normal'
+
+          AppState.devices.forEach((dev, dIdx) => {
+            const baseT = 24.0 + (dIdx * 3.5);
+            const baseH = 55.0 + (dIdx * 8.0);
+            const t = baseT + (Math.sin(i * 0.3 + dIdx) * 1.5);
+            const h = baseH + (Math.cos(i * 0.3 + dIdx) * 4.0);
+            const isWarn = t > dev.temp_max || h > dev.hum_max;
+            AppState.cachedData.push({
+              timestamp: pStr,
+              device_id: dev.device_id,
+              temperature: parseFloat(t.toFixed(1)),
+              humidity: parseFloat(h.toFixed(1)),
+              status: isWarn ? 'Warning: Suhu Tinggi' : 'Normal'
+            });
           });
         }
       }
 
-      const lastPoint = mockSessionHistory[mockSessionHistory.length - 1];
-      const nextTemp = Math.min(34, Math.max(16, lastPoint.temperature + (Math.random() - 0.48) * 0.5));
-      const nextHum = Math.min(88, Math.max(30, lastPoint.humidity + (Math.random() - 0.5) * 1.0));
-      const isWarn = nextTemp > AppState.thresholds.tempMax || nextTemp < AppState.thresholds.tempMin ||
-        nextHum > AppState.thresholds.humMax || nextHum < AppState.thresholds.humMin;
+      // Tambahkan titik baru untuk masing-masing device
+      AppState.devices.forEach((dev, dIdx) => {
+        const last = AppState.cachedData.filter(d => d.device_id === dev.device_id).slice(-1)[0];
+        const nextTemp = last ? last.temperature + (Math.random() - 0.48) * 0.4 : 27.0;
+        const nextHum = last ? last.humidity + (Math.random() - 0.5) * 0.8 : 60.0;
+        const isWarn = nextTemp > dev.temp_max || nextHum > dev.hum_max;
 
-      const newPoint = {
-        timestamp: timeStr,
-        device_id: 'ROOM_Server01',
-        temperature: parseFloat(nextTemp.toFixed(1)),
-        humidity: parseFloat(nextHum.toFixed(1)),
-        status: isWarn ? 'Warning: Kelembaban Tinggi' : 'Normal'
-      };
+        AppState.cachedData.push({
+          timestamp: timeStr,
+          device_id: dev.device_id,
+          temperature: parseFloat(nextTemp.toFixed(1)),
+          humidity: parseFloat(nextHum.toFixed(1)),
+          status: isWarn ? 'Warning: Suhu Tinggi' : 'Normal'
+        });
+      });
 
-      mockSessionHistory.push(newPoint);
-      if (mockSessionHistory.length > 200) mockSessionHistory.shift();
+      if (AppState.cachedData.length > 300) AppState.cachedData.splice(0, AppState.devices.length);
 
-      return {
-        latest: newPoint,
-        data: mockSessionHistory
-      };
+      renderMultiRoomGrid();
+      if (AppState.selectedRoomId !== 'all') {
+        renderSingleRoomKPI(AppState.selectedRoomId);
+      }
+      renderChart();
+      renderTable();
+      checkForActiveAlerts();
     }
   </script>
 </body>
