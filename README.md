@@ -37,6 +37,13 @@ project EkaCs/
 │   └── platformio.ini     # Konfigurasi PlatformIO
 ├── gas/
 │   └── Code.gs            # Backend Google Apps Script (Multi-Device Registry & REST API)
+├── esp32/
+│   ├── firmware.ino       # Firmware ESP32/ESP32-S3 (Multi-Device, NVS Flash, Auto MAC)
+│   └── platformio.ini     # Konfigurasi PlatformIO
+├── esp8266/
+│   └── esp8266.ino        # Firmware NodeMCU ESP8266 (ESP-12E, EEPROM Flash, Auto MAC)
+├── gas/
+│   └── Code.gs            # Backend Google Apps Script (Multi-Device Registry & REST API)
 ├── web/
 │   └── index.html         # Web Dashboard Multi-Ruangan Responsive (Tailwind + Chart.js)
 └── README.md              # Dokumentasi & Panduan Lengkap
@@ -44,13 +51,28 @@ project EkaCs/
 
 ---
 
-## 🔌 Skema Pin Hardware ESP32-S3 (Sensor DHT11 / DHT22)
+## 🔌 Skema Pin Hardware
 
-| Kaki Sensor DHT | Pin ESP32-S3 | Keterangan |
+### 1. Board ESP8266 (NodeMCU ESP-12E / ESP-12F)
+| Kaki Sensor DHT11 | Pin NodeMCU ESP8266 | Keterangan pada Board |
+| :--- | :--- | :--- |
+| **`+` (VCC)** | **`3V`** (3.3V) | Pin kiri paling atas (di bawah tombol FLASH) |
+| **`-` (GND)** | **`G`** (GND) | Pin kiri urutan ke-3 dari atas |
+| **`out` (DATA)** | **`D2`** (GPIO 4) | Pin kiri urutan ke-14 dari atas |
+
+* **Tombol Reset Portal:** Tombol **`FLASH`** pada board (D3 / GPIO 0) — tahan 4 detik untuk membuka WiFi `EcoSense-Setup`.
+* **Pengaturan Arduino IDE:**
+  * **Board:** `NodeMCU 1.0 (ESP-12E Module)`
+  * **CPU Frequency:** `80 MHz`
+  * **Flash Size:** `4MB (FS:2MB OTA:~1019KB)` atau `4MB (FS:1MB)`
+  * **Upload Speed:** `115200` atau `921600`
+
+### 2. Board ESP32 / ESP32-S3
+| Kaki Sensor DHT11/22 | Pin ESP32-S3 | Keterangan |
 | :--- | :--- | :--- |
 | **`+` (VCC)** | **`3V3`** | Pin ke-1 kiri atas board |
 | **`-` (GND)** | **`GND`** | Pin ke-1 kanan atas board |
-| **`out` (DATA)** | **`GPIO 4`** | Pin ke-4 kiri atas board (di bawah `3V3`, `3V3`, `RST`) |
+| **`out` (DATA)** | **`GPIO 4`** | Pin ke-4 kiri atas board |
 
 > **Penting untuk ESP32-S3 di Arduino IDE:**
 > * `Tools -> USB CDC On Boot` : **Enabled** (Wajib agar Serial Monitor menyala di USB).

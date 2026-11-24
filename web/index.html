@@ -111,7 +111,7 @@
           <div class="flex items-center space-x-2 text-[11px] text-slate-400">
             <span id="navLiveClock" class="font-mono text-slate-300">--:--:-- WIB</span>
             <span>&bull;</span>
-            <span id="navDeviceCountBadge" class="text-teal-400 font-semibold">1 Ruangan Aktif</span>
+            <span id="navDeviceCountBadge" class="text-slate-400 font-semibold">Memeriksa status...</span>
           </div>
         </div>
       </div>
@@ -121,13 +121,14 @@
 
         <!-- Live Connection Status Pill -->
         <div id="connectionStatusPill"
-          class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs">
+          class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs"
+          title="Status sinkronisasi data web browser ke Server Cloud Google Apps Script">
           <span class="relative flex h-2.5 w-2.5">
             <span id="statusPulseRing"
               class="pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span id="statusPulseDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </span>
-          <span id="connectionStatusText" class="font-medium text-slate-300 text-[11px]">Terkoneksi (Live)</span>
+          <span id="connectionStatusText" class="font-medium text-slate-300 text-[11px]">Cloud Sync (Live)</span>
         </div>
 
         <!-- Sync Countdown Badge -->
@@ -890,8 +891,22 @@
       const badgeCount = document.getElementById('badgeAllRoomCount');
       const navBadge = document.getElementById('navDeviceCountBadge');
 
-      if (badgeCount) badgeCount.textContent = AppState.devices.length;
-      if (navBadge) navBadge.textContent = `${AppState.devices.length} Ruangan Aktif`;
+      const totalDevs = AppState.devices.length;
+      const onlineDevs = AppState.devices.filter(d => d.is_online).length;
+
+      if (badgeCount) badgeCount.textContent = totalDevs;
+      if (navBadge) {
+        if (totalDevs === 0) {
+          navBadge.textContent = 'Belum Ada Ruangan';
+          navBadge.className = 'text-slate-500 font-semibold';
+        } else if (onlineDevs === 0) {
+          navBadge.textContent = `0/${totalDevs} Ruangan Online (Alat Offline)`;
+          navBadge.className = 'text-amber-400 font-semibold';
+        } else {
+          navBadge.textContent = `${onlineDevs}/${totalDevs} Ruangan Online`;
+          navBadge.className = 'text-teal-400 font-semibold';
+        }
+      }
 
       let html = '';
       AppState.devices.forEach((dev) => {
@@ -999,18 +1014,28 @@
         const status = latest ? latest.status : (dev.latest_status || 'Normal');
         const isWarning = status && status.toLowerCase().includes('warning');
 
+        const isOffline = !dev.is_online;
         const onlineDot = dev.is_online
-          ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Online</span>`
-          : `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>Offline</span>`;
+          ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Online</span>`
+          : `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>Offline</span>`;
 
-        const statusBadge = isWarning
-          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">${status}</span>`
-          : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">Normal</span>`;
+        let statusBadge = '';
+        if (isOffline) {
+          statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Offline (Data Terakhir)</span>`;
+        } else if (isWarning) {
+          statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">${status}</span>`;
+        } else {
+          statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">Normal</span>`;
+        }
+
+        const borderClass = isOffline
+          ? 'border-slate-800/80 bg-slate-900/60 opacity-80 hover:opacity-100 hover:border-slate-700'
+          : (isWarning ? 'border-rose-500/50 shadow-glow-rose bg-slate-900' : 'border-slate-800 hover:border-teal-500/40 bg-slate-900');
 
         const lastSeen = latest ? latest.timestamp : (dev.last_seen || '-');
 
         html += `
-          <div class="p-5 rounded-2xl bg-slate-900 border ${isWarning ? 'border-rose-500/50 shadow-glow-rose' : 'border-slate-800 hover:border-teal-500/40'} shadow-xl transition-all space-y-4">
+          <div class="p-5 rounded-2xl border ${borderClass} shadow-xl transition-all space-y-4">
             
             <!-- Card Header -->
             <div class="flex items-start justify-between">
@@ -1025,11 +1050,11 @@
             <!-- Temperature & Humidity Big Numbers -->
             <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
               <div>
-                <div class="text-[10px] uppercase font-bold text-orange-400 tracking-wider">Suhu</div>
+                <div class="text-[10px] uppercase font-bold text-orange-400 tracking-wider">Suhu ${isOffline ? '<span class="text-[9px] text-slate-500 font-normal lowercase">(terakhir)</span>' : ''}</div>
                 <div class="text-2xl font-black text-white font-mono mt-0.5">${temp} <span class="text-xs text-orange-400">°C</span></div>
               </div>
               <div>
-                <div class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Kelembaban</div>
+                <div class="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">Kelembaban ${isOffline ? '<span class="text-[9px] text-slate-500 font-normal lowercase">(terakhir)</span>' : ''}</div>
                 <div class="text-2xl font-black text-white font-mono mt-0.5">${hum} <span class="text-xs text-cyan-400">%</span></div>
               </div>
             </div>
@@ -1722,11 +1747,11 @@
       if (AppState.isPaused) {
         iconPause.classList.add('hidden');
         iconPlay.classList.remove('hidden');
-        if (pillText) pillText.textContent = 'Dijeda (Paused)';
+        if (pillText) pillText.textContent = 'Sinkronisasi Dijeda';
       } else {
         iconPlay.classList.add('hidden');
         iconPause.classList.remove('hidden');
-        if (pillText) pillText.textContent = 'Terkoneksi (Live)';
+        if (pillText) pillText.textContent = 'Cloud Sync (Live)';
         fetchTelemetryData();
         resetCountdown();
       }
@@ -1738,11 +1763,11 @@
       const dot = document.getElementById('statusPulseDot');
 
       if (isOnline) {
-        if (pillText) pillText.textContent = 'Terkoneksi (Live)';
+        if (pillText) pillText.textContent = 'Cloud Sync (Live)';
         if (ring) ring.className = 'pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
         if (dot) dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500';
       } else {
-        if (pillText) pillText.textContent = message || 'Offline';
+        if (pillText) pillText.textContent = message || 'Server Cloud Terputus';
         if (ring) ring.className = 'hidden';
         if (dot) dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500';
       }
@@ -1751,6 +1776,8 @@
     function checkForActiveAlerts() {
       let activeWarnings = [];
       AppState.devices.forEach(dev => {
+        // Hanya picu alarm peringatan aktif jika perangkat sedang ONLINE
+        if (!dev.is_online) return;
         const devLogs = AppState.cachedData.filter(d => d.device_id === dev.device_id);
         if (devLogs.length > 0) {
           const latest = devLogs[devLogs.length - 1];
