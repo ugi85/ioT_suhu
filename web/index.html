@@ -40,6 +40,14 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+  <!-- SheetJS (xlsx) for Exporting Real .xlsx Files (Local + CDN Fallback) -->
+  <script src="xlsx.full.min.js"></script>
+  <script>
+    if (typeof XLSX === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>');
+    }
+  </script>
+
   <style>
     /* Custom Smooth Scrollbar */
     ::-webkit-scrollbar {
@@ -424,12 +432,19 @@
       </div>
     </div>
 
-    <!-- C. GRAFIK TREN TELEMETRI REALTIME -->
-    <section class="p-5 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+    <!-- C. GRAFIK TREN TELEMETRI REALTIME (DILENGKAPI TOGGLE EXPAND / COLLAPSE) -->
+    <section id="chartSectionCard" class="p-5 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4 transition-all duration-300">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        
+        <!-- Header Info (Bisa diklik untuk toggle ciutkan / buka grafik) -->
+        <div class="cursor-pointer select-none group" onclick="toggleChartCollapse()" title="Klik untuk ciutkan atau buka grafik">
           <div class="flex items-center space-x-2">
-            <h2 id="chartTitle" class="text-base font-bold text-white tracking-tight">Tren Telemetri Realtime</h2>
+            <h2 id="chartTitle" class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+              <span>Tren Telemetri Realtime</span>
+              <span id="chartCollapsedBadge" class="hidden px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                Grafik Diciutkan
+              </span>
+            </h2>
             <span id="chartModeBadge"
               class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-teal-400 border border-slate-700">Komparasi
               Suhu</span>
@@ -438,7 +453,7 @@
             secara berdampingan</p>
         </div>
 
-        <!-- Controls: Visibility Toggles & Range Limit Buttons -->
+        <!-- Controls: Visibility Toggles, Range Limit & Expand / Collapse Buttons -->
         <div class="flex flex-wrap items-center gap-2">
 
           <!-- Single Room Visibility Toggles (Hanya muncul jika 1 ruangan dipilih) -->
@@ -456,8 +471,8 @@
             </button>
           </div>
 
-          <!-- Chart Limit Selector -->
-          <div class="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs">
+          <!-- Chart Limit Selector (15, 30, 50, 100 Data) -->
+          <div id="chartLimitControls" class="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs transition-opacity duration-200">
             <button onclick="setChartLimit(15)" id="btnLimit15"
               class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">15 Data</button>
             <button onclick="setChartLimit(30)" id="btnLimit30"
@@ -469,11 +484,42 @@
               class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">100 Data</button>
           </div>
 
+          <!-- Vertical Divider -->
+          <div id="chartControlsDivider" class="h-6 w-px bg-slate-800 hidden sm:block"></div>
+
+          <!-- Action Buttons: Expand Height (Mode Luas) & Toggle Expand/Collapse -->
+          <div class="flex items-center space-x-1.5">
+
+            <!-- 1. Toggle Mode Luas (Expand / Normal Height) -->
+            <button id="btnToggleChartHeight" onclick="toggleChartHeight()"
+              class="px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-1.5 text-xs"
+              title="Perbesar / Perkecil Ukuran Grafik (Mode Luas)">
+              <svg id="iconExpandHeight" class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+              <svg id="iconCompressHeight" class="w-3.5 h-3.5 hidden text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9L4 4m0 0h4m-4 0v4m11 1l5-5m0 0h-4m4 0v4M9 15l-5 5m0 0h4m-4 0v-4m11-1l5 5m0 0h-4m4 0v-4" />
+              </svg>
+              <span id="textExpandHeight" class="hidden md:inline text-[11px] font-medium">Mode Luas</span>
+            </button>
+
+            <!-- 2. Toggle Ciutkan / Tampilkan Grafik (Collapse / Expand Accordion) -->
+            <button id="btnToggleChartCollapse" onclick="toggleChartCollapse()"
+              class="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-teal-300 border border-slate-700 transition flex items-center gap-1.5 text-xs font-semibold shadow-sm"
+              title="Ciutkan atau Buka Grafik Tren">
+              <svg id="iconChevronCollapse" class="w-4 h-4 text-teal-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+              </svg>
+              <span id="textToggleCollapse" class="text-[11px]">Ciutkan</span>
+            </button>
+
+          </div>
+
         </div>
       </div>
 
       <!-- Chart Canvas Container -->
-      <div class="w-full h-72 sm:h-80 md:h-96 relative">
+      <div id="chartContainer" class="w-full h-72 sm:h-80 md:h-96 relative transition-all duration-300">
         <canvas id="telemetryChart"></canvas>
       </div>
     </section>
@@ -482,68 +528,131 @@
     <section class="p-5 sm:p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
 
       <!-- Table Header & Controls Bar -->
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-1">
-        <div>
-          <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
-            <span>Log Riwayat Telemetri</span>
-            <span id="tableTotalRecordsBadge"
-              class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 font-mono">0
-              Data</span>
-          </h2>
-          <p id="tableSubtitle" class="text-xs text-slate-400 mt-0.5">Riwayat lengkap pembacaan sensor yang tersimpan
-            pada Google Spreadsheet</p>
+      <div class="space-y-4 pb-2 border-b border-slate-800/80">
+        <!-- Top Row: Title, Counter Badge, & Download Buttons -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+              <span>Log Riwayat Telemetri</span>
+              <span id="tableTotalRecordsBadge"
+                class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-teal-300 border border-slate-700 font-mono">0 Data</span>
+              <span id="tableFilterActiveBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Filter Aktif
+              </span>
+            </h2>
+            <p id="tableSubtitle" class="text-xs text-slate-400 mt-0.5">Riwayat lengkap pembacaan sensor yang tersimpan pada Google Spreadsheet</p>
+          </div>
+
+          <!-- Download Action Buttons (XLSX & CSV) -->
+          <div class="flex items-center space-x-2">
+            <!-- Download XLSX Button (Primary) -->
+            <button onclick="exportToXlsx()" id="btnExportXlsx"
+              class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-700/25 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Unduh XLSX</span>
+              <span id="badgeExportCount" class="px-1.5 py-0.2 rounded-full bg-emerald-700/90 text-[10px] font-mono">0</span>
+            </button>
+
+            <!-- Download CSV Button (Secondary) -->
+            <button onclick="exportToCsv()"
+              class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+              title="Unduh format CSV alternatif">
+              <span class="text-[11px] font-mono font-bold px-0.5">CSV</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Filter, Show View, Search, & Export Controls -->
-        <div class="flex flex-wrap items-center gap-2.5">
-
-          <!-- SHOW VIEW SELECTOR -->
-          <div
-            class="flex items-center space-x-1.5 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700 text-xs text-slate-300">
-            <label for="tablePageSizeSelect"
-              class="text-slate-400 text-[11px] font-medium whitespace-nowrap">Tampilkan:</label>
-            <select id="tablePageSizeSelect" onchange="changePageSize(this.value)"
-              class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-teal-400 font-bold focus:outline-none focus:border-teal-500 cursor-pointer">
-              <option value="10" selected>10 Data</option>
-              <option value="20">20 Data</option>
-              <option value="50">50 Data</option>
-              <option value="100">100 Data</option>
-              <option value="all">Semua Data</option>
+        <!-- Filter Controls Grid / Toolbar -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1 text-xs">
+          
+          <!-- 1. Filter Ruangan / Device -->
+          <div>
+            <label class="block text-[11px] text-slate-400 font-medium mb-1">Filter Ruangan:</label>
+            <select id="tableRoomFilter" onchange="handleTableRoomFilter(this.value)"
+              class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500">
+              <option value="all">🏢 Semua Ruangan</option>
             </select>
           </div>
 
-          <!-- Status Filter Tabs -->
-          <div class="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700 text-xs">
-            <button onclick="setStatusFilter('all')" id="btnFilterAll"
-              class="px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30 transition text-[11px]">Semua</button>
-            <button onclick="setStatusFilter('normal')" id="btnFilterNormal"
-              class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition text-[11px]">Normal</button>
-            <button onclick="setStatusFilter('warning')" id="btnFilterWarning"
-              class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition text-[11px]">Peringatan</button>
+          <!-- 2. Filter Status -->
+          <div>
+            <label class="block text-[11px] text-slate-400 font-medium mb-1">Filter Status:</label>
+            <select id="tableStatusFilter" onchange="setStatusFilter(this.value)"
+              class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500">
+              <option value="all">Semua Status</option>
+              <option value="normal">✅ Hanya Normal</option>
+              <option value="warning">⚠️ Hanya Peringatan</option>
+            </select>
           </div>
 
-          <!-- Search Input -->
-          <div class="relative flex-grow sm:flex-grow-0">
-            <input type="text" id="tableFilterInput" placeholder="Cari waktu / ruangan..." oninput="handleSearchInput()"
-              class="w-full sm:w-44 px-3 py-1.5 pl-8 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500">
-            <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor"
-              viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+          <!-- 3. Filter Rentang Waktu (Quick Date Preset) -->
+          <div>
+            <label class="block text-[11px] text-slate-400 font-medium mb-1">Rentang Tanggal:</label>
+            <select id="tableDatePreset" onchange="handleDatePresetChange(this.value)"
+              class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500">
+              <option value="all" selected>Semua Waktu</option>
+              <option value="today">Hari Ini</option>
+              <option value="yesterday">Kemarin</option>
+              <option value="7days">7 Hari Terakhir</option>
+              <option value="custom">Pilih Tanggal Sendiri...</option>
+            </select>
           </div>
 
-          <!-- Download CSV Button -->
-          <button onclick="exportToCsv()"
-            class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md shadow-emerald-700/20 transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span class="hidden sm:inline">Ekspor CSV</span>
-          </button>
+          <!-- 4. Search Keyword -->
+          <div>
+            <label class="block text-[11px] text-slate-400 font-medium mb-1">Cari Kata Kunci:</label>
+            <div class="relative">
+              <input type="text" id="tableFilterInput" placeholder="Cari jam / ID / teks..." oninput="handleSearchInput()"
+                class="w-full px-2.5 py-1.5 pl-7 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500">
+              <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- 5. Tampilkan Baris & Reset -->
+          <div class="flex items-end space-x-2">
+            <div class="flex-grow">
+              <label class="block text-[11px] text-slate-400 font-medium mb-1">Tampilkan:</label>
+              <select id="tablePageSizeSelect" onchange="changePageSize(this.value)"
+                class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-teal-400 font-bold focus:outline-none focus:border-teal-500 cursor-pointer">
+                <option value="10" selected>10 Baris</option>
+                <option value="20">20 Baris</option>
+                <option value="50">50 Baris</option>
+                <option value="100">100 Baris</option>
+                <option value="all">Semua Baris</option>
+              </select>
+            </div>
+            <button onclick="resetAllTableFilters()" id="btnResetFilters"
+              class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-300 border border-slate-700 transition text-xs font-semibold whitespace-nowrap"
+              title="Reset semua filter ke kondisi awal">
+              Reset
+            </button>
+          </div>
 
         </div>
+
+        <!-- Custom Date Range Picker Container (Hanya muncul jika "Pilih Tanggal Sendiri..." dipilih) -->
+        <div id="customDateRangeContainer" class="hidden flex flex-wrap items-center gap-3 p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 text-xs">
+          <span class="text-slate-400 text-[11px] font-semibold">Rentang Tanggal Kustom:</span>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-slate-500 text-[11px]">Dari:</span>
+            <input type="date" id="inputDateStart" onchange="handleCustomDateChange()"
+              class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-teal-500">
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-slate-500 text-[11px]">Sampai:</span>
+            <input type="date" id="inputDateEnd" onchange="handleCustomDateChange()"
+              class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-teal-500">
+          </div>
+          <button onclick="clearCustomDates()" class="text-slate-500 hover:text-slate-300 text-[11px] underline">
+            Hapus Tanggal
+          </button>
+        </div>
+
       </div>
 
       <!-- Responsive Table Container -->
@@ -805,6 +914,8 @@
       countdownLeft: 30,
       chartLimit: 50,
       chartInstance: null,
+      chartCollapsed: localStorage.getItem('iot_chart_collapsed') === 'true',
+      chartExpandedHeight: localStorage.getItem('iot_chart_expanded_height') === 'true',
 
       // Multi-Room / Multi-Device State
       selectedRoomId: 'all', // 'all' atau specific device_id (e.g. 'ROOM_Server01')
@@ -829,10 +940,14 @@
 
       // Table View & Pagination State
       table: {
-        pageSize: localStorage.getItem('iot_table_page_size') === 'all' ? 'all' : parseInt(localStorage.getItem('iot_table_page_size') || '20', 10),
+        pageSize: localStorage.getItem('iot_table_page_size') === 'all' ? 'all' : parseInt(localStorage.getItem('iot_table_page_size') || '10', 10),
         currentPage: 1,
         searchQuery: '',
         statusFilter: 'all', // 'all', 'normal', 'warning'
+        roomFilter: 'all', // 'all' atau specific device_id
+        datePreset: 'all', // 'all', 'today', 'yesterday', '7days', 'custom'
+        customDateStart: '',
+        customDateEnd: '',
         sortKey: 'index',
         sortOrder: 'desc' // 'asc' or 'desc'
       }
@@ -852,6 +967,7 @@
       initSettingsUI();
       renderRoomNavigationTabs();
       initChart();
+      applyChartUIState();
       checkDemoModeUI();
 
       // Mulai siklus data
@@ -947,10 +1063,16 @@
           activeText.innerHTML = `Ruangan: <strong class="text-teal-300">${roomName}</strong> (${AppState.selectedRoomId})`;
         }
       }
+
+      // Pastikan opsi dropdown filter ruangan di tabel selalu sinkron
+      renderTableRoomFilterOptions();
     }
 
     function selectRoom(roomId) {
       AppState.selectedRoomId = roomId;
+      AppState.table.roomFilter = roomId;
+      const tRoomSel = document.getElementById('tableRoomFilter');
+      if (tRoomSel) tRoomSel.value = roomId;
       AppState.table.currentPage = 1;
 
       renderRoomNavigationTabs();
@@ -1258,6 +1380,7 @@
 
     function renderChart() {
       if (!AppState.chartInstance) return;
+      if (AppState.chartCollapsed) return; // Hemat render jika grafik sedang disembunyikan / diciutkan
 
       if (AppState.selectedRoomId === 'all') {
         // MODE ALL: Komparasi Garis Suhu Antar Ruangan
@@ -1401,24 +1524,262 @@
     }
 
     // -------------------------------------------------------------------------
-    // 6. Advanced Table Logic (Show View, Filter, Sort, Pagination)
+    // Chart View Controls: Expand / Collapse & Expand Height
     // -------------------------------------------------------------------------
+    function toggleChartCollapse(forceState) {
+      if (typeof forceState === 'boolean') {
+        AppState.chartCollapsed = forceState;
+      } else {
+        AppState.chartCollapsed = !AppState.chartCollapsed;
+      }
+
+      localStorage.setItem('iot_chart_collapsed', String(AppState.chartCollapsed));
+      applyChartCollapseUI();
+
+      if (!AppState.chartCollapsed) {
+        setTimeout(() => {
+          if (AppState.chartInstance) {
+            AppState.chartInstance.resize();
+            renderChart();
+          }
+        }, 50);
+      }
+    }
+
+    function applyChartCollapseUI() {
+      const container = document.getElementById('chartContainer');
+      const limitControls = document.getElementById('chartLimitControls');
+      const divider = document.getElementById('chartControlsDivider');
+      const btnHeight = document.getElementById('btnToggleChartHeight');
+      const badge = document.getElementById('chartCollapsedBadge');
+      const iconChevron = document.getElementById('iconChevronCollapse');
+      const textBtn = document.getElementById('textToggleCollapse');
+      const card = document.getElementById('chartSectionCard');
+
+      if (AppState.chartCollapsed) {
+        if (container) container.classList.add('hidden');
+        if (limitControls) limitControls.classList.add('hidden');
+        if (divider) divider.classList.add('hidden');
+        if (btnHeight) btnHeight.classList.add('hidden');
+        if (badge) badge.classList.remove('hidden');
+        if (iconChevron) iconChevron.classList.add('rotate-180');
+        if (textBtn) textBtn.textContent = 'Buka Grafik';
+        if (card) card.classList.remove('space-y-4');
+      } else {
+        if (container) container.classList.remove('hidden');
+        if (limitControls) limitControls.classList.remove('hidden');
+        if (divider) divider.classList.remove('hidden');
+        if (btnHeight) btnHeight.classList.remove('hidden');
+        if (badge) badge.classList.add('hidden');
+        if (iconChevron) iconChevron.classList.remove('rotate-180');
+        if (textBtn) textBtn.textContent = 'Ciutkan';
+        if (card) card.classList.add('space-y-4');
+      }
+    }
+
+    function toggleChartHeight(forceState) {
+      if (typeof forceState === 'boolean') {
+        AppState.chartExpandedHeight = forceState;
+      } else {
+        AppState.chartExpandedHeight = !AppState.chartExpandedHeight;
+      }
+
+      // Jika grafik sedang diciutkan/tertutup, otomatis buka terlebih dahulu
+      if (AppState.chartCollapsed) {
+        toggleChartCollapse(false);
+      }
+
+      localStorage.setItem('iot_chart_expanded_height', String(AppState.chartExpandedHeight));
+      applyChartHeightUI();
+
+      setTimeout(() => {
+        if (AppState.chartInstance) {
+          AppState.chartInstance.resize();
+        }
+      }, 50);
+    }
+
+    function applyChartHeightUI() {
+      const container = document.getElementById('chartContainer');
+      const iconExpand = document.getElementById('iconExpandHeight');
+      const iconCompress = document.getElementById('iconCompressHeight');
+      const textHeight = document.getElementById('textExpandHeight');
+      const btnHeight = document.getElementById('btnToggleChartHeight');
+
+      const normalClasses = ['h-72', 'sm:h-80', 'md:h-96'];
+      const expandedClasses = ['h-[540px]', 'md:h-[620px]'];
+
+      if (AppState.chartExpandedHeight) {
+        if (container) {
+          normalClasses.forEach(c => container.classList.remove(c));
+          expandedClasses.forEach(c => container.classList.add(c));
+        }
+        if (iconExpand) iconExpand.classList.add('hidden');
+        if (iconCompress) iconCompress.classList.remove('hidden');
+        if (textHeight) textHeight.textContent = 'Mode Normal';
+        if (btnHeight) {
+          btnHeight.classList.add('bg-teal-500/20', 'text-teal-300', 'border-teal-500/40');
+          btnHeight.classList.remove('bg-slate-800/90', 'text-slate-300', 'border-slate-700');
+        }
+      } else {
+        if (container) {
+          expandedClasses.forEach(c => container.classList.remove(c));
+          normalClasses.forEach(c => container.classList.add(c));
+        }
+        if (iconExpand) iconExpand.classList.remove('hidden');
+        if (iconCompress) iconCompress.classList.add('hidden');
+        if (textHeight) textHeight.textContent = 'Mode Luas';
+        if (btnHeight) {
+          btnHeight.classList.remove('bg-teal-500/20', 'text-teal-300', 'border-teal-500/40');
+          btnHeight.classList.add('bg-slate-800/90', 'text-slate-300', 'border-slate-700');
+        }
+      }
+    }
+
+    function applyChartUIState() {
+      applyChartCollapseUI();
+      applyChartHeightUI();
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. Advanced Table Logic (Show View, Multi-Filter, Sort, Pagination, & Export)
+    // -------------------------------------------------------------------------
+    function renderTableRoomFilterOptions() {
+      const select = document.getElementById('tableRoomFilter');
+      if (!select) return;
+      const currentVal = AppState.table.roomFilter || 'all';
+
+      let html = '<option value="all">🏢 Semua Ruangan</option>';
+      AppState.devices.forEach(dev => {
+        const isOnline = dev.is_online ? '🟢' : '⚪';
+        html += `<option value="${dev.device_id}">${isOnline} ${dev.name || dev.device_id}</option>`;
+      });
+
+      select.innerHTML = html;
+      select.value = currentVal;
+    }
+
+    function handleTableRoomFilter(roomId) {
+      AppState.table.roomFilter = roomId;
+      AppState.table.currentPage = 1;
+      renderTable();
+    }
+
+    function handleDatePresetChange(preset) {
+      AppState.table.datePreset = preset;
+      AppState.table.currentPage = 1;
+      const customContainer = document.getElementById('customDateRangeContainer');
+
+      if (preset === 'custom') {
+        if (customContainer) customContainer.classList.remove('hidden');
+      } else {
+        if (customContainer) customContainer.classList.add('hidden');
+      }
+      renderTable();
+    }
+
+    function handleCustomDateChange() {
+      const startEl = document.getElementById('inputDateStart');
+      const endEl = document.getElementById('inputDateEnd');
+      AppState.table.customDateStart = startEl ? startEl.value : '';
+      AppState.table.customDateEnd = endEl ? endEl.value : '';
+      AppState.table.currentPage = 1;
+      renderTable();
+    }
+
+    function clearCustomDates() {
+      const startEl = document.getElementById('inputDateStart');
+      const endEl = document.getElementById('inputDateEnd');
+      if (startEl) startEl.value = '';
+      if (endEl) endEl.value = '';
+      AppState.table.customDateStart = '';
+      AppState.table.customDateEnd = '';
+      AppState.table.currentPage = 1;
+      renderTable();
+    }
+
+    function resetAllTableFilters() {
+      AppState.table.roomFilter = 'all';
+      AppState.table.statusFilter = 'all';
+      AppState.table.datePreset = 'all';
+      AppState.table.customDateStart = '';
+      AppState.table.customDateEnd = '';
+      AppState.table.searchQuery = '';
+      AppState.table.currentPage = 1;
+
+      // Reset value pada elemen HTML
+      const roomSel = document.getElementById('tableRoomFilter');
+      if (roomSel) roomSel.value = 'all';
+      const statusSel = document.getElementById('tableStatusFilter');
+      if (statusSel) statusSel.value = 'all';
+      const dateSel = document.getElementById('tableDatePreset');
+      if (dateSel) dateSel.value = 'all';
+      const searchInp = document.getElementById('tableFilterInput');
+      if (searchInp) searchInp.value = '';
+      const customContainer = document.getElementById('customDateRangeContainer');
+      if (customContainer) customContainer.classList.add('hidden');
+      const startEl = document.getElementById('inputDateStart');
+      if (startEl) startEl.value = '';
+      const endEl = document.getElementById('inputDateEnd');
+      if (endEl) endEl.value = '';
+
+      renderTable();
+    }
+
     function getProcessedTableData() {
       let data = [...AppState.cachedData];
 
-      // 1. Filter Room
-      if (AppState.selectedRoomId !== 'all') {
+      // 1. Filter Ruangan (Spesifik per dropdown tabel atau sinkron tab atas)
+      const roomFilter = AppState.table.roomFilter || 'all';
+      if (roomFilter !== 'all') {
+        data = data.filter(d => d.device_id === roomFilter);
+      } else if (AppState.selectedRoomId !== 'all') {
         data = data.filter(d => d.device_id === AppState.selectedRoomId);
       }
 
-      // 2. Filter Status
+      // 2. Filter Status (Normal vs Warning)
       if (AppState.table.statusFilter === 'normal') {
         data = data.filter(d => !d.status || !d.status.toLowerCase().includes('warning'));
       } else if (AppState.table.statusFilter === 'warning') {
         data = data.filter(d => d.status && d.status.toLowerCase().includes('warning'));
       }
 
-      // 3. Search Query
+      // 3. Filter Rentang Tanggal
+      const datePreset = AppState.table.datePreset || 'all';
+      if (datePreset !== 'all') {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+        if (datePreset === 'today') {
+          data = data.filter(d => d.timestamp && d.timestamp.startsWith(todayStr));
+        } else if (datePreset === 'yesterday') {
+          const yest = new Date(now.getTime() - 86400000);
+          const yestStr = `${yest.getFullYear()}-${pad(yest.getMonth() + 1)}-${pad(yest.getDate())}`;
+          data = data.filter(d => d.timestamp && d.timestamp.startsWith(yestStr));
+        } else if (datePreset === '7days') {
+          const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000);
+          data = data.filter(d => {
+            if (!d.timestamp) return false;
+            const itemDate = new Date(d.timestamp.replace(/-/g, '/'));
+            return itemDate >= sevenDaysAgo;
+          });
+        } else if (datePreset === 'custom') {
+          const start = AppState.table.customDateStart;
+          const end = AppState.table.customDateEnd;
+          if (start || end) {
+            data = data.filter(d => {
+              if (!d.timestamp) return false;
+              const datePart = d.timestamp.split(' ')[0]; // 'YYYY-MM-DD'
+              if (start && datePart < start) return false;
+              if (end && datePart > end) return false;
+              return true;
+            });
+          }
+        }
+      }
+
+      // 4. Search Query
       if (AppState.table.searchQuery.trim() !== '') {
         const q = AppState.table.searchQuery.toLowerCase();
         data = data.filter(d => {
@@ -1435,7 +1796,7 @@
         });
       }
 
-      // 4. Sorting
+      // 5. Sorting
       data.sort((a, b) => {
         let valA, valB;
         if (AppState.table.sortKey === 'timestamp') {
@@ -1469,6 +1830,25 @@
 
       document.getElementById('tableTotalRecordsBadge').textContent = `${totalRows} Data`;
 
+      // Update badge counter pada tombol ekspor
+      const exportBadge = document.getElementById('badgeExportCount');
+      if (exportBadge) exportBadge.textContent = totalRows;
+
+      // Periksa apakah ada filter yang sedang aktif
+      const isFilterActive = (AppState.table.roomFilter && AppState.table.roomFilter !== 'all') ||
+                             (AppState.table.statusFilter && AppState.table.statusFilter !== 'all') ||
+                             (AppState.table.datePreset && AppState.table.datePreset !== 'all') ||
+                             (AppState.table.searchQuery && AppState.table.searchQuery.trim() !== '');
+
+      const filterBadge = document.getElementById('tableFilterActiveBadge');
+      if (filterBadge) {
+        if (isFilterActive) {
+          filterBadge.classList.remove('hidden');
+        } else {
+          filterBadge.classList.add('hidden');
+        }
+      }
+
       const pageSize = AppState.table.pageSize === 'all' ? totalRows : parseInt(AppState.table.pageSize, 10);
       const totalPages = pageSize > 0 ? Math.ceil(totalRows / pageSize) : 1;
 
@@ -1482,8 +1862,8 @@
 
       const paginationInfo = document.getElementById('tablePaginationInfo');
       if (totalRows === 0) {
-        paginationInfo.innerHTML = `Tidak ada data yang cocok.`;
-        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500 font-sans">Tidak ditemukan data log telemetri yang sesuai filter.</td></tr>`;
+        paginationInfo.innerHTML = `Tidak ada data yang cocok dengan filter.`;
+        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500 font-sans">Tidak ditemukan data log telemetri yang sesuai filter yang dipilih.</td></tr>`;
       } else {
         paginationInfo.innerHTML = `Menampilkan <span class="font-bold text-white">${startIndex + 1}</span> - <span class="font-bold text-white">${endIndex}</span> dari <span class="font-bold text-white">${totalRows}</span> log data`;
 
@@ -1589,16 +1969,8 @@
       AppState.table.statusFilter = status;
       AppState.table.currentPage = 1;
 
-      ['All', 'Normal', 'Warning'].forEach(s => {
-        const btn = document.getElementById(`btnFilter${s}`);
-        if (btn) {
-          if (s.toLowerCase() === status) {
-            btn.className = 'px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30 transition text-[11px]';
-          } else {
-            btn.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition text-[11px]';
-          }
-        }
-      });
+      const statusSel = document.getElementById('tableStatusFilter');
+      if (statusSel) statusSel.value = status;
 
       renderTable();
     }
@@ -1613,10 +1985,82 @@
       renderTable();
     }
 
+    // -------------------------------------------------------------------------
+    // Export Data: XLSX (Excel) & CSV Sesuai Filter Aktif
+    // -------------------------------------------------------------------------
+    function exportToXlsx() {
+      const dataToExport = getProcessedTableData();
+      if (dataToExport.length === 0) {
+        alert('Tidak ada data telemetri yang cocok dengan filter untuk diekspor!');
+        return;
+      }
+
+      if (typeof XLSX === 'undefined') {
+        alert('Library Excel (SheetJS) belum selesai dimuat. Silakan periksa koneksi internet Anda atau coba sesaat lagi.');
+        return;
+      }
+
+      // Siapkan baris data untuk SheetJS
+      const wsData = [
+        ['No', 'Waktu (WIB)', 'ID Perangkat', 'Nama Ruangan', 'Suhu (°C)', 'Kelembaban (%RH)', 'Status']
+      ];
+
+      dataToExport.forEach((item, index) => {
+        const dev = AppState.devices.find(x => x.device_id === item.device_id);
+        const devName = dev ? dev.name : item.device_id;
+        const tempNum = item.temperature !== null && !isNaN(item.temperature) ? parseFloat(item.temperature) : null;
+        const humNum = item.humidity !== null && !isNaN(item.humidity) ? parseFloat(item.humidity) : null;
+
+        wsData.push([
+          index + 1,
+          item.timestamp || '-',
+          item.device_id || '-',
+          devName || '-',
+          tempNum !== null ? tempNum : '-',
+          humNum !== null ? humNum : '-',
+          item.status || 'Normal'
+        ]);
+      });
+
+      // Buat Worksheet & Workbook
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Lebar kolom otomatis agar rapi saat dibuka di Microsoft Excel
+      ws['!cols'] = [
+        { wch: 6 },  // No
+        { wch: 22 }, // Waktu (WIB)
+        { wch: 16 }, // ID Perangkat
+        { wch: 24 }, // Nama Ruangan
+        { wch: 12 }, // Suhu (°C)
+        { wch: 18 }, // Kelembaban (%RH)
+        { wch: 22 }  // Status
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Log Telemetri');
+
+      // Tentukan nama file yang informatif
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+      
+      let roomTag = 'SemuaRuangan';
+      const activeRoom = AppState.table.roomFilter || AppState.selectedRoomId;
+      if (activeRoom && activeRoom !== 'all') {
+        const d = AppState.devices.find(x => x.device_id === activeRoom);
+        roomTag = (d ? d.name : activeRoom).replace(/[^a-zA-Z0-9_-]/g, '_');
+      }
+
+      const fileName = `IoT_EcoSense_Log_${roomTag}_${dateStr}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      showExportToast(`Berhasil mengunduh ${dataToExport.length} baris data ke file Excel (.xlsx)!`);
+    }
+
     function exportToCsv() {
       const dataToExport = getProcessedTableData();
       if (dataToExport.length === 0) {
-        alert('Tidak ada data untuk diekspor!');
+        alert('Tidak ada data telemetri yang cocok dengan filter untuk diekspor!');
         return;
       }
 
@@ -1628,9 +2072,9 @@
         const devName = dev ? dev.name : item.device_id;
         const line = [
           index + 1,
-          `"${item.timestamp}"`,
-          `"${item.device_id}"`,
-          `"${devName}"`,
+          `"${item.timestamp || '-'}"`,
+          `"${item.device_id || '-'}"`,
+          `"${devName || '-'}"`,
           item.temperature,
           item.humidity,
           `"${item.status || 'Normal'}"`
@@ -1642,11 +2086,36 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      const dateStr = new Date().toISOString().slice(0, 10);
-      link.setAttribute('download', `IoT_EcoSense_Log_${dateStr}.csv`);
+
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+      let roomTag = 'SemuaRuangan';
+      const activeRoom = AppState.table.roomFilter || AppState.selectedRoomId;
+      if (activeRoom && activeRoom !== 'all') {
+        const d = AppState.devices.find(x => x.device_id === activeRoom);
+        roomTag = (d ? d.name : activeRoom).replace(/[^a-zA-Z0-9_-]/g, '_');
+      }
+
+      link.setAttribute('download', `IoT_EcoSense_Log_${roomTag}_${dateStr}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      showExportToast(`Berhasil mengunduh ${dataToExport.length} baris data ke file CSV!`);
+    }
+
+    function showExportToast(msg) {
+      const toast = document.getElementById('exportToast');
+      const text = document.getElementById('exportToastMsg');
+      if (!toast) return;
+      if (text) text.textContent = msg;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 3500);
     }
 
     // -------------------------------------------------------------------------
@@ -2254,6 +2723,16 @@
       checkForActiveAlerts();
     }
   </script>
+  <!-- Notification Toast Container -->
+  <div id="exportToast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="flex items-center space-x-2.5 px-4 py-3 rounded-2xl bg-emerald-600 text-white shadow-2xl border border-emerald-400/30 text-xs font-semibold">
+      <svg class="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+      <span id="exportToastMsg">Berhasil mengunduh data!</span>
+    </div>
+  </div>
+
 </body>
 
 </html>
