@@ -36,6 +36,7 @@ const char *FACTORY_DEFAULT_DEV_ID   = "AUTO";
 #define DHT_PIN          D2      // Pin D2 pada NodeMCU (GPIO 4)
 #define DHT_TYPE         DHT22   // Sensor DHT22 / AM2302 (Warna Putih)
 #define LED_PIN          D4      // Pin D4 (LED_BUILTIN ESP-12, Active LOW: GPIO 2)
+#define LED_ACT_PIN      D1      // Pin D1 (LED Indikator Eksternal, Active HIGH: GPIO 5)
 #define BOOT_BUTTON_PIN  D3      // Pin D3 (Tombol FLASH pada board: GPIO 0)
 
 DHT dht(DHT_PIN, DHT_TYPE);
@@ -66,10 +67,13 @@ IPAddress apIP(192, 168, 4, 1);
 IPAddress netMsk(255, 255, 255, 0);
 
 // ============================================================================
-// 5. HELPER LED & TOMBOL (ESP8266 LED adalah ACTIVE LOW)
+// 5. HELPER LED & INDIKATOR AKTIVITAS (HEARTBEAT)
 // ============================================================================
+// LED_PIN (D4) onboard ESP-12 adalah Active LOW (LOW = Nyala, HIGH = Mati)
+// LED_ACT_PIN (D1) eksternal adalah Active HIGH (HIGH = Nyala, LOW = Mati)
 void setLedState(bool on) {
-  digitalWrite(LED_PIN, on ? LOW : HIGH); // Active LOW: LOW = Nyala, HIGH = Mati
+  digitalWrite(LED_PIN, on ? LOW : HIGH);     // Onboard LED D4
+  digitalWrite(LED_ACT_PIN, on ? HIGH : LOW); // Eksternal LED Pin D1
 }
 
 void blinkLed(int times, int delayMs) {
@@ -572,6 +576,7 @@ void setup() {
   delay(1500);
 
   pinMode(LED_PIN, OUTPUT);
+  pinMode(LED_ACT_PIN, OUTPUT);
   pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
   setLedState(false);
 
@@ -607,6 +612,7 @@ void setup() {
     startCaptivePortal();
   } else {
     Serial.println(F("[SYSTEM] Siap. Memulai siklus pengiriman telemetri...\n"));
+    blinkLed(2, 100); // Kedip 2x manis tanda WiFi terhubung & alat siap
   }
 }
 
@@ -617,9 +623,11 @@ void loop() {
     server.handleClient();
 
     static unsigned long lastBlink = 0;
+    static bool apLedState = false;
     if (millis() - lastBlink >= 600) {
       lastBlink = millis();
-      digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+      apLedState = !apLedState;
+      setLedState(apLedState);
     }
     return;
   }
@@ -644,7 +652,13 @@ void loop() {
     float currentHumidity    = 0.0;
 
     if (readSensor(currentTemperature, currentHumidity)) {
+      // Nyalakan LED tanda proses transmisi dimulai (Heartbeat Pulse)
+      setLedState(true);
       sendTelemetryData(currentTemperature, currentHumidity);
+      setLedState(false); // Matikan kembali setelah data sukses terkirim
+    } else {
+      // Sensor gagal membaca (glitch / kabel lepas) -> Kedip peringatan 3x cepat
+      blinkLed(3, 80);
     }
   }
 
