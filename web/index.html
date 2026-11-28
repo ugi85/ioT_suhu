@@ -113,7 +113,7 @@
             <h1 class="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5">
               <span>IoT EcoSense</span>
             </h1>
-            <span
+            <span id="navSystemModeBadge"
               class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">Multi-Room</span>
           </div>
           <div class="flex items-center space-x-2 text-[11px] text-slate-400">
@@ -128,9 +128,9 @@
       <div class="flex items-center space-x-2 sm:space-x-3">
 
         <!-- Live Connection Status Pill -->
-        <div id="connectionStatusPill"
-          class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs"
-          title="Status sinkronisasi data web browser ke Server Cloud Google Apps Script">
+        <div id="connectionStatusPill" onclick="openSettingsModal()"
+          class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs cursor-pointer hover:border-teal-500/60 hover:bg-slate-800 transition"
+          title="Klik untuk melihat / mengubah URL Server Cloud Google Apps Script">
           <span class="relative flex h-2.5 w-2.5">
             <span id="statusPulseRing"
               class="pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -209,7 +209,7 @@
 
       <!-- Room Tabs / Selector -->
       <div class="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0 text-xs">
-        <span class="text-slate-400 font-semibold whitespace-nowrap hidden md:inline">Tampilan Ruangan:</span>
+        <span id="labelRoomNav" class="text-slate-400 font-semibold whitespace-nowrap hidden md:inline">Tampilan Ruangan:</span>
 
         <!-- Tab: Semua Ruangan (Overview Grid) -->
         <button onclick="selectRoom('all')" id="tabRoom_all"
@@ -287,7 +287,7 @@
       <!-- Detail Header Bar -->
       <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-900 border border-slate-800">
         <div class="flex items-center space-x-3">
-          <button onclick="selectRoom('all')"
+          <button id="btnBackToOverview" onclick="selectRoom('all')"
             class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
             title="Kembali ke Semua Ruangan">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -474,12 +474,11 @@
           <!-- Chart Limit Selector (15, 30, 50, 100 Data) -->
           <div id="chartLimitControls" class="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs transition-opacity duration-200">
             <button onclick="setChartLimit(15)" id="btnLimit15"
-              class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">15 Data</button>
+              class="px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-semibold border border-teal-500/30 transition">15 Data</button>
             <button onclick="setChartLimit(30)" id="btnLimit30"
               class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">30 Data</button>
             <button onclick="setChartLimit(50)" id="btnLimit50"
-              class="px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-semibold border border-teal-500/30 transition">50
-              Data</button>
+              class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">50 Data</button>
             <button onclick="setChartLimit(100)" id="btnLimit100"
               class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">100 Data</button>
           </div>
@@ -532,10 +531,16 @@
         <!-- Top Row: Title, Counter Badge, & Download Buttons -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+            <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2 flex-wrap">
               <span>Log Riwayat Telemetri</span>
               <span id="tableTotalRecordsBadge"
                 class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-teal-300 border border-slate-700 font-mono">0 Data</span>
+              <span id="tableStorageBadge"
+                class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 font-mono"
+                title="Kapasitas penyimpanan Google Spreadsheet & sistem rotasi otomatis (Auto-FIFO)">
+                <span id="dotStorageStatus" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span id="textStorageCapacity">Kapasitas: 0 / 10.000</span>
+              </span>
               <span id="tableFilterActiveBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                 Filter Aktif
               </span>
@@ -562,6 +567,20 @@
               title="Unduh format CSV alternatif">
               <span class="text-[11px] font-mono font-bold px-0.5">CSV</span>
             </button>
+          </div>
+        </div>
+
+        <!-- Database Storage Alert Banner (Tampil Otomatis saat >= 80% Penuh) -->
+        <div id="bannerStorageAlert" class="hidden p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-3">
+          <span class="text-lg">📦</span>
+          <div class="flex-1">
+            <div class="font-bold flex items-center justify-between flex-wrap gap-1">
+              <span>Pengingat Kapasitas Database: <span id="valStorageText">8.500 / 10.000 baris</span> (<span id="valStoragePercent">85%</span>)</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-200">Auto-Rotate FIFO Aktif</span>
+            </div>
+            <p class="text-slate-300 text-[11px] mt-1 leading-relaxed">
+              Database hampir mencapai batas optimal. Anda <strong>tidak perlu menghapus data secara manual</strong>—fitur <em>Auto-Replace FIFO</em> akan otomatis menimpa baris paling lama dengan data sensor terbaru sehingga alat Anda dapat terus mencatat 24/7 tanpa henti. Jika Anda memerlukan arsip data lama, silakan klik tombol <strong>"Unduh XLSX"</strong> di atas.
+            </p>
           </div>
         </div>
 
@@ -809,6 +828,17 @@
       <!-- Settings Form -->
       <div class="space-y-4 text-xs">
 
+        <!-- Onboarding Notice untuk Konsumen Baru -->
+        <div id="cfgOnboardingAlert" class="hidden p-3 bg-teal-500/10 border border-teal-500/30 rounded-xl text-teal-300 text-xs">
+          <div class="font-bold flex items-center gap-1.5 mb-1">
+            <span>👋</span>
+            <span>Selamat Datang di IoT EcoSense!</span>
+          </div>
+          <p class="text-slate-300 leading-relaxed text-[11px]">
+            Silakan tempelkan <strong>Web App URL</strong> dari Google Spreadsheet pribadi Anda di bawah ini untuk memulai pemantauan suhu &amp; kelembaban ruangan secara realtime.
+          </p>
+        </div>
+
         <!-- Google Apps Script URL -->
         <div>
           <label class="block font-semibold text-slate-300 mb-1">Google Apps Script Web App URL</label>
@@ -878,10 +908,13 @@
 
       <!-- Modal Footer -->
       <div class="flex items-center justify-between pt-3 border-t border-slate-800">
-        <button type="button" onclick="toggleDemoMode()" id="btnToggleDemo"
-          class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs">
-          Nyalakan Demo Mode
-        </button>
+        <div>
+          <!-- Tombol Demo Mode hanya muncul jika dibuka lewat link khusus marketing ?demo=true -->
+          <button type="button" onclick="toggleDemoMode()" id="btnToggleDemo"
+            class="hidden text-amber-400 hover:text-amber-300 font-semibold text-xs transition">
+            Matikan Demo Mode
+          </button>
+        </div>
 
         <div class="flex space-x-2">
           <button type="button" onclick="closeSettingsModal()"
@@ -902,9 +935,50 @@
   <!-- VANILLA JAVASCRIPT APPLICATION CORE (MULTI-DEVICE ENGINE) -->
   <!-- ===================================================================== -->
   <script>
+    // Deteksi parameter URL (?gas=... atau ?api=... atau ?demo=true)
+    let paramGasImported = false;
+    let paramDemoTriggered = false;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramGasUrl = urlParams.get('gas') || urlParams.get('api');
+      if (paramGasUrl) {
+        const decodedUrl = decodeURIComponent(paramGasUrl).trim();
+        if (decodedUrl.startsWith('https://script.google.com/')) {
+          localStorage.setItem('iot_gas_url', decodedUrl);
+          localStorage.setItem('iot_demo_mode', 'false');
+          paramGasImported = true;
+          const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+          window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+        }
+      }
+
+      // Cek apakah ada pemicu demo:
+      // 1. Hash URL: #demo (misal: index.html#demo) -> Sangat mudah dihapal & 100% anti-404 di semua server!
+      // 2. Query param: ?demo atau ?demo=true (misal: index.html?demo)
+      // 3. Path URL: /demo (misal: domain.com/demo jika server hosting mendukung rewrite)
+      const isHashDemo = window.location.hash.toLowerCase().includes('demo');
+      const isParamDemo = urlParams.has('demo') && urlParams.get('demo') !== 'false' && urlParams.get('demo') !== '0';
+      const isPathDemo = window.location.pathname.toLowerCase().endsWith('/demo');
+
+      if (isHashDemo || isParamDemo || isPathDemo) {
+        localStorage.setItem('iot_demo_mode', 'true');
+        paramDemoTriggered = true;
+        let cleanPath = window.location.pathname;
+        if (cleanPath.toLowerCase().endsWith('/demo')) {
+          cleanPath = cleanPath.slice(0, -5) || '/';
+        }
+        const cleanUrl = window.location.protocol + "//" + window.location.host + cleanPath;
+        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+      } else if (urlParams.get('demo') === 'false' || urlParams.get('demo') === '0') {
+        localStorage.setItem('iot_demo_mode', 'false');
+      }
+    } catch (e) {
+      console.warn('Gagal memproses URL param:', e);
+    }
+
     // State Aplikasi Global
     const AppState = {
-      gasUrl: localStorage.getItem('iot_gas_url') || 'https://script.google.com/macros/s/AKfycbxJgJMG8B3yveCjTUsgq3S3oJxkyumnpwLBw_y5R9u9HqgkBupTwG3Cum-PJPJVfvAK/exec',
+      gasUrl: localStorage.getItem('iot_gas_url') || '',
       pollIntervalSec: parseInt(localStorage.getItem('iot_poll_interval') || '30', 10),
       soundAlert: localStorage.getItem('iot_sound_alert') === 'true',
       demoMode: localStorage.getItem('iot_demo_mode') === 'true',
@@ -912,31 +986,24 @@
       pollTimer: null,
       countdownTimer: null,
       countdownLeft: 30,
-      chartLimit: 50,
+      chartLimit: parseInt(localStorage.getItem('iot_chart_limit') || '15', 10),
       chartInstance: null,
       chartCollapsed: localStorage.getItem('iot_chart_collapsed') === 'true',
       chartExpandedHeight: localStorage.getItem('iot_chart_expanded_height') === 'true',
 
       // Multi-Room / Multi-Device State
       selectedRoomId: 'all', // 'all' atau specific device_id (e.g. 'ROOM_Server01')
-      devices: JSON.parse(localStorage.getItem('iot_device_registry') || 'null') || [
-        {
-          device_id: 'ROOM_01',
-          name: 'Ruang Server',
-          send_interval_sec: 5,
-          temp_min: 18.0,
-          temp_max: 28.0,
-          hum_min: 40.0,
-          hum_max: 70.0,
-          last_seen: '-',
-          latest_temp: null,
-          latest_hum: null,
-          latest_status: 'Normal',
-          is_online: true
-        }
-      ],
+      devices: JSON.parse(localStorage.getItem('iot_device_registry') || 'null') || [],
 
       cachedData: [], // Seluruh data log mentah dari server
+
+      // Storage & Capacity State (Auto-FIFO Monitoring)
+      storage: {
+        totalRows: 0,
+        maxRows: 10000,
+        usagePercent: 0,
+        isAutoRotate: true
+      },
 
       // Table View & Pagination State
       table: {
@@ -974,6 +1041,17 @@
       fetchTelemetryData();
       startPollingScheduler();
 
+      if (paramGasImported) {
+        setTimeout(() => showExportToast('✓ URL Google Apps Script pribadi berhasil dihubungkan!'), 700);
+      } else if (paramDemoTriggered) {
+        setTimeout(() => showExportToast('⚡ Mode Demo Simulasi Aktif (Marketing / Demo)!'), 700);
+      } else if (!AppState.gasUrl && !AppState.demoMode) {
+        // Konsumen baru pertama kali membuka dashboard: munculkan panduan pengaturan
+        setTimeout(() => {
+          openSettingsModal();
+        }, 600);
+      }
+
       // Timer jam realtime & relatif
       setInterval(updateRealtimeClock, 1000);
       setInterval(updateRelativeTimeTicker, 1000);
@@ -1000,21 +1078,31 @@
     }
 
     // -------------------------------------------------------------------------
-    // 2. Room Navigation & Tab Selector
+    // 2. Room Navigation & Tab Selector (Smart Adaptive Multi/Single Device)
     // -------------------------------------------------------------------------
     function renderRoomNavigationTabs() {
       const container = document.getElementById('dynamicRoomTabs');
       const badgeCount = document.getElementById('badgeAllRoomCount');
       const navBadge = document.getElementById('navDeviceCountBadge');
+      const brandBadge = document.getElementById('navSystemModeBadge');
+      const tabAll = document.getElementById('tabRoom_all');
+      const labelRoomNav = document.getElementById('labelRoomNav');
+      const btnBack = document.getElementById('btnBackToOverview');
 
       const totalDevs = AppState.devices.length;
       const onlineDevs = AppState.devices.filter(d => d.is_online).length;
 
       if (badgeCount) badgeCount.textContent = totalDevs;
+
+      // Update badge di navbar atas
       if (navBadge) {
         if (totalDevs === 0) {
           navBadge.textContent = 'Belum Ada Ruangan';
           navBadge.className = 'text-slate-500 font-semibold';
+        } else if (totalDevs === 1) {
+          const dev = AppState.devices[0];
+          navBadge.textContent = dev.is_online ? `1 Alat Online (${dev.name || dev.device_id})` : `1 Alat Offline`;
+          navBadge.className = dev.is_online ? 'text-teal-400 font-semibold' : 'text-amber-400 font-semibold';
         } else if (onlineDevs === 0) {
           navBadge.textContent = `0/${totalDevs} Ruangan Online (Alat Offline)`;
           navBadge.className = 'text-amber-400 font-semibold';
@@ -1023,6 +1111,54 @@
           navBadge.className = 'text-teal-400 font-semibold';
         }
       }
+
+      // Update Brand System Mode Badge
+      if (brandBadge) {
+        if (totalDevs <= 1) {
+          brandBadge.textContent = totalDevs === 1 ? 'Single Room' : 'Smart Monitor';
+          brandBadge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30';
+        } else {
+          brandBadge.textContent = 'Multi-Room';
+          brandBadge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30';
+        }
+      }
+
+      // Sembunyikan atau tampilkan tombol Back to Overview
+      if (btnBack) {
+        if (totalDevs <= 1) {
+          btnBack.classList.add('hidden');
+        } else {
+          btnBack.classList.remove('hidden');
+        }
+      }
+
+      // KONDISI 1: JIKA ALAT HANYA 1 PCS (Single Device Focus)
+      if (totalDevs === 1) {
+        const singleDev = AppState.devices[0];
+        AppState.selectedRoomId = singleDev.device_id;
+        if (tabAll) tabAll.classList.add('hidden');
+        if (labelRoomNav) labelRoomNav.textContent = 'Ruangan Aktif:';
+
+        const onlineClass = singleDev.is_online ? 'bg-emerald-400' : 'bg-slate-500';
+        container.innerHTML = `
+          <div class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 border border-teal-500/40 bg-teal-500/20 text-teal-300 shadow-sm">
+            <span class="w-2 h-2 rounded-full ${onlineClass}"></span>
+            <span>${singleDev.name || singleDev.device_id}</span>
+          </div>
+        `;
+
+        const activeText = document.getElementById('activeRoomIndicator');
+        if (activeText) {
+          activeText.innerHTML = `Mode: <strong class="text-teal-300">Fokus 1 Ruangan (${singleDev.name || singleDev.device_id})</strong>`;
+        }
+
+        renderTableRoomFilterOptions();
+        return;
+      }
+
+      // KONDISI 2: JIKA ALAT >= 2 PCS (Multi-Room Adaptif)
+      if (tabAll) tabAll.classList.remove('hidden');
+      if (labelRoomNav) labelRoomNav.textContent = 'Tampilan Ruangan:';
 
       let html = '';
       AppState.devices.forEach((dev) => {
@@ -1043,7 +1179,6 @@
       container.innerHTML = html;
 
       // Update active state tab "all"
-      const tabAll = document.getElementById('tabRoom_all');
       if (tabAll) {
         if (AppState.selectedRoomId === 'all') {
           tabAll.className = 'px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 bg-teal-500/20 text-teal-300 border border-teal-500/40 whitespace-nowrap shadow-sm';
@@ -1056,7 +1191,7 @@
       const activeText = document.getElementById('activeRoomIndicator');
       if (activeText) {
         if (AppState.selectedRoomId === 'all') {
-          activeText.innerHTML = `Mode: <strong class="text-white">Overview Semua Ruangan (${AppState.devices.length})</strong>`;
+          activeText.innerHTML = `Mode: <strong class="text-white">Overview Semua Ruangan (${totalDevs})</strong>`;
         } else {
           const d = AppState.devices.find(x => x.device_id === AppState.selectedRoomId);
           const roomName = d ? d.name : AppState.selectedRoomId;
@@ -1064,11 +1199,15 @@
         }
       }
 
-      // Pastikan opsi dropdown filter ruangan di tabel selalu sinkron
       renderTableRoomFilterOptions();
     }
 
     function selectRoom(roomId) {
+      // Jika hanya ada 1 alat, selalu paksa ke alat tersebut
+      if (AppState.devices.length === 1) {
+        roomId = AppState.devices[0].device_id;
+      }
+
       AppState.selectedRoomId = roomId;
       AppState.table.roomFilter = roomId;
       const tRoomSel = document.getElementById('tableRoomFilter');
@@ -1083,7 +1222,7 @@
       const chartBadge = document.getElementById('chartModeBadge');
       const chartSubtitle = document.getElementById('chartSubtitle');
 
-      if (roomId === 'all') {
+      if (roomId === 'all' && AppState.devices.length !== 1) {
         overviewSec.classList.remove('hidden');
         detailSec.classList.add('hidden');
         singleToggles.classList.add('hidden');
@@ -1096,18 +1235,25 @@
         chartBadge.textContent = 'Dual Y-Axis';
         chartSubtitle.textContent = 'Sumbu Kiri: Suhu (°C, Oranye) • Sumbu Kanan: Kelembaban (%RH, Cyan)';
 
-        const dev = AppState.devices.find(x => x.device_id === roomId);
+        const targetId = (AppState.devices.length === 1) ? AppState.devices[0].device_id : roomId;
+        const dev = AppState.devices.find(x => x.device_id === targetId);
         if (dev) {
-          document.getElementById('detailRoomTitle').innerHTML = `
-            <span>${dev.name}</span>
-          `;
+          const detailTitle = document.getElementById('detailRoomTitle');
+          if (detailTitle) {
+            detailTitle.innerHTML = `
+              <span>${dev.name || dev.device_id}</span>
+              <span id="detailRoomDeviceBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/30">${dev.device_id}</span>
+            `;
+          }
         }
       }
 
       // Re-render chart & table
       renderMultiRoomGrid();
-      if (roomId !== 'all') {
-        renderSingleRoomKPI(roomId);
+      if (AppState.selectedRoomId !== 'all') {
+        renderSingleRoomKPI(AppState.selectedRoomId);
+      } else if (AppState.devices.length === 1) {
+        renderSingleRoomKPI(AppState.devices[0].device_id);
       }
       renderChart();
       renderTable();
@@ -1120,8 +1266,35 @@
       const container = document.getElementById('multiRoomGrid');
       if (!container) return;
 
+      const count = AppState.devices.length;
+
+      // Dynamic Adaptive Grid: Menyesuaikan jumlah kolom secara proporsional sesuai jumlah alat
+      if (count === 2) {
+        container.className = 'grid grid-cols-1 md:grid-cols-2 gap-5';
+      } else if (count === 3) {
+        container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+      } else if (count === 4) {
+        container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4';
+      } else if (count >= 5) {
+        container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
+      } else {
+        container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+      }
+
       if (AppState.devices.length === 0) {
-        container.innerHTML = `<div class="col-span-3 p-8 text-center text-slate-500">Belum ada perangkat / ruangan yang terhubung.</div>`;
+        container.innerHTML = `
+          <div class="col-span-1 md:col-span-2 lg:col-span-3 p-8 rounded-2xl border border-slate-800 bg-slate-900/60 text-center space-y-3">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center">
+              <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 class="text-base font-bold text-white">Database Terhubung (Menunggu Alat Pertama)</h3>
+            <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              Google Spreadsheet Anda siap menerima data. Silakan nyalakan alat IoT EcoSense Anda dan hubungkan ke WiFi. Ruangan dan pembacaan sensor akan otomatis muncul di sini begitu alat pertama kali mengirim data.
+            </p>
+          </div>
+        `;
         return;
       }
 
@@ -1510,6 +1683,7 @@
 
     function setChartLimit(limit) {
       AppState.chartLimit = limit;
+      localStorage.setItem('iot_chart_limit', String(limit));
       [15, 30, 50, 100].forEach(n => {
         const btn = document.getElementById(`btnLimit${n}`);
         if (btn) {
@@ -1639,6 +1813,17 @@
     function applyChartUIState() {
       applyChartCollapseUI();
       applyChartHeightUI();
+      // Sinkronkan highlight tombol batas riwayat titik data pada grafik
+      [15, 30, 50, 100].forEach(n => {
+        const btn = document.getElementById(`btnLimit${n}`);
+        if (btn) {
+          if (n === AppState.chartLimit) {
+            btn.className = 'px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-semibold border border-teal-500/30 transition';
+          } else {
+            btn.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition';
+          }
+        }
+      });
     }
 
     // -------------------------------------------------------------------------
@@ -1823,12 +2008,53 @@
       return data;
     }
 
+    function renderStorageUI() {
+      const badge = document.getElementById('tableStorageBadge');
+      const dot = document.getElementById('dotStorageStatus');
+      const text = document.getElementById('textStorageCapacity');
+      const banner = document.getElementById('bannerStorageAlert');
+      const valText = document.getElementById('valStorageText');
+      const valPercent = document.getElementById('valStoragePercent');
+
+      if (!badge) return;
+
+      const total = AppState.storage.totalRows || AppState.cachedData.length;
+      const max = AppState.storage.maxRows || 10000;
+      const pct = max > 0 ? Math.min(100, parseFloat(((total / max) * 100).toFixed(1))) : 0;
+
+      if (text) text.textContent = `Database: ${total.toLocaleString('id-ID')} / ${max.toLocaleString('id-ID')}`;
+
+      // Update warna indikator status kapasitas database
+      if (pct >= 90) {
+        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse';
+        badge.className = 'hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 font-mono';
+      } else if (pct >= 80) {
+        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse';
+        badge.className = 'hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono';
+      } else {
+        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+        badge.className = 'hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 font-mono';
+      }
+
+      // Tampilkan banner peringatan ramah jika kapasitas sudah >= 80%
+      if (banner) {
+        if (pct >= 80) {
+          banner.classList.remove('hidden');
+          if (valText) valText.textContent = `${total.toLocaleString('id-ID')} / ${max.toLocaleString('id-ID')} baris`;
+          if (valPercent) valPercent.textContent = `${pct}%`;
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
+    }
+
     function renderTable() {
       const tbody = document.getElementById('telemetryTableBody');
       const processed = getProcessedTableData();
       const totalRows = processed.length;
 
       document.getElementById('tableTotalRecordsBadge').textContent = `${totalRows} Data`;
+      renderStorageUI();
 
       // Update badge counter pada tombol ekspor
       const exportBadge = document.getElementById('badgeExportCount');
@@ -2133,6 +2359,13 @@
         return;
       }
 
+      // Jika URL Google Apps Script belum dikonfigurasi oleh konsumen
+      if (!AppState.gasUrl) {
+        updateConnectionStatus(false, 'Server Belum Diatur');
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+        return;
+      }
+
       try {
         const url = `${AppState.gasUrl}?action=all&limit=250&_t=${Date.now()}`;
         const response = await fetch(url, { method: 'GET', mode: 'cors' });
@@ -2144,26 +2377,86 @@
           updateConnectionStatus(true);
 
           // 1. Perbarui Registry Perangkat jika disediakan oleh server
-          if (result.devices && Array.isArray(result.devices) && result.devices.length > 0) {
+          if (Array.isArray(result.devices)) {
+            const prevDevCount = AppState.devices.length;
             AppState.devices = result.devices;
             localStorage.setItem('iot_device_registry', JSON.stringify(AppState.devices));
+
+            // Smart Auto-Adaptive View Handling:
+            if (AppState.devices.length === 1) {
+              AppState.selectedRoomId = AppState.devices[0].device_id;
+            } else if (AppState.devices.length > 1 && prevDevCount === 1) {
+              AppState.selectedRoomId = 'all';
+              showExportToast(`🎉 Perangkat baru terdeteksi (${AppState.devices.length} Alat)! Dashboard otomatis beralih ke Mode Multi-Ruangan.`);
+            }
+
             renderRoomNavigationTabs();
           }
 
-          // 2. Cache Riwayat Data
+          // 2. Cache Riwayat Data & Kapasitas Database
           if (Array.isArray(result.data)) {
             AppState.cachedData = result.data;
           }
 
+          if (result.storage) {
+            AppState.storage = {
+              totalRows: result.storage.total_rows || 0,
+              maxRows: result.storage.max_rows || 10000,
+              usagePercent: result.storage.usage_percent || 0,
+              isAutoRotate: result.storage.is_auto_rotate_active !== false
+            };
+          } else {
+            const tot = result.total_rows !== undefined ? result.total_rows : AppState.cachedData.length;
+            AppState.storage = {
+              totalRows: tot,
+              maxRows: 10000,
+              usagePercent: Math.min(100, parseFloat(((tot / 10000) * 100).toFixed(1))),
+              isAutoRotate: true
+            };
+          }
+          renderStorageUI();
+
           // 3. Render Views
-          renderMultiRoomGrid();
-          if (AppState.selectedRoomId !== 'all') {
+          if (AppState.devices.length === 0) {
+            document.getElementById('multiRoomOverviewSection').classList.remove('hidden');
+            document.getElementById('singleRoomDetailSection').classList.add('hidden');
+            document.getElementById('chartSingleRoomToggles').classList.add('hidden');
+            renderMultiRoomGrid();
+          } else if (AppState.devices.length === 1) {
+            document.getElementById('multiRoomOverviewSection').classList.add('hidden');
+            document.getElementById('singleRoomDetailSection').classList.remove('hidden');
+            document.getElementById('chartSingleRoomToggles').classList.remove('hidden');
+            document.getElementById('chartModeBadge').textContent = 'Dual Y-Axis';
+            document.getElementById('chartSubtitle').textContent = 'Sumbu Kiri: Suhu (°C, Oranye) • Sumbu Kanan: Kelembaban (%RH, Cyan)';
+
+            const dev = AppState.devices[0];
+            const titleEl = document.getElementById('detailRoomTitle');
+            if (titleEl && dev) {
+              titleEl.innerHTML = `
+                <span>${dev.name || dev.device_id}</span>
+                <span id="detailRoomDeviceBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/30">${dev.device_id}</span>
+              `;
+            }
+            renderSingleRoomKPI(dev.device_id);
+          } else if (AppState.selectedRoomId === 'all') {
+            document.getElementById('multiRoomOverviewSection').classList.remove('hidden');
+            document.getElementById('singleRoomDetailSection').classList.add('hidden');
+            document.getElementById('chartSingleRoomToggles').classList.add('hidden');
+            document.getElementById('chartModeBadge').textContent = 'Komparasi Suhu';
+            document.getElementById('chartSubtitle').textContent = 'Membandingkan fluktuasi suhu antar seluruh ruangan secara berdampingan';
+            renderMultiRoomGrid();
+          } else {
+            document.getElementById('multiRoomOverviewSection').classList.add('hidden');
+            document.getElementById('singleRoomDetailSection').classList.remove('hidden');
+            document.getElementById('chartSingleRoomToggles').classList.remove('hidden');
             renderSingleRoomKPI(AppState.selectedRoomId);
           }
+
+          // 4. Render Grafik & Tabel Telemetri
           renderChart();
           renderTable();
 
-          // 4. Periksa Alarm Warning
+          // 5. Periksa Alarm Warning
           checkForActiveAlerts();
 
         } else {
@@ -2236,9 +2529,10 @@
         if (ring) ring.className = 'pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75';
         if (dot) dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500';
       } else {
+        const isNotConfigured = message === 'Server Belum Diatur';
         if (pillText) pillText.textContent = message || 'Server Cloud Terputus';
-        if (ring) ring.className = 'hidden';
-        if (dot) dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500';
+        if (ring) ring.className = isNotConfigured ? 'pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75' : 'hidden';
+        if (dot) dot.className = isNotConfigured ? 'relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500' : 'relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500';
       }
     }
 
@@ -2583,6 +2877,15 @@
       document.getElementById('cfgGasUrl').value = AppState.gasUrl;
       document.getElementById('cfgInterval').value = String(AppState.pollIntervalSec);
       document.getElementById('cfgSoundAlert').value = String(AppState.soundAlert);
+
+      const onboardingEl = document.getElementById('cfgOnboardingAlert');
+      if (onboardingEl) {
+        if (!AppState.gasUrl) {
+          onboardingEl.classList.remove('hidden');
+        } else {
+          onboardingEl.classList.add('hidden');
+        }
+      }
     }
 
     function openSettingsModal() {
@@ -2607,10 +2910,18 @@
       AppState.gasUrl = url;
       AppState.pollIntervalSec = interval;
       AppState.soundAlert = sound;
+      AppState.demoMode = false;
+
+      // Reset cache dan registry lokal agar tidak membawa data dummy
+      AppState.devices = [];
+      AppState.cachedData = [];
+      localStorage.removeItem('iot_device_registry');
 
       localStorage.setItem('iot_gas_url', url);
       localStorage.setItem('iot_poll_interval', interval);
       localStorage.setItem('iot_sound_alert', sound);
+      localStorage.setItem('iot_demo_mode', 'false');
+      checkDemoModeUI();
 
       closeSettingsModal();
       startPollingScheduler();
@@ -2645,6 +2956,11 @@
     function toggleDemoMode() {
       AppState.demoMode = !AppState.demoMode;
       localStorage.setItem('iot_demo_mode', AppState.demoMode);
+      if (!AppState.demoMode) {
+        AppState.cachedData = [];
+        AppState.devices = [];
+        localStorage.removeItem('iot_device_registry');
+      }
       checkDemoModeUI();
       closeSettingsModal();
       fetchTelemetryData();
@@ -2653,12 +2969,23 @@
     function checkDemoModeUI() {
       const btn = document.getElementById('btnToggleDemo');
       if (btn) {
-        btn.textContent = AppState.demoMode ? 'Matikan Demo Mode (Kembali ke Live)' : 'Nyalakan Demo Mode';
+        if (AppState.demoMode) {
+          btn.classList.remove('hidden');
+          btn.textContent = 'Matikan Demo Mode (Kembali ke Live)';
+        } else {
+          btn.classList.add('hidden');
+        }
       }
     }
 
     function simulateIncomingData() {
-      updateConnectionStatus(true);
+      const pillText = document.getElementById('connectionStatusText');
+      const ring = document.getElementById('statusPulseRing');
+      const dot = document.getElementById('statusPulseDot');
+      if (pillText) pillText.textContent = 'Demo Mode (Simulasi)';
+      if (ring) ring.className = 'pulse-ring-anim absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75';
+      if (dot) dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500';
+
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
       const timeStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
