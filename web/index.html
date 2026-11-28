@@ -177,6 +177,17 @@
           </svg>
         </button>
 
+        <!-- Tombol Buka di HP / Scan QR Magic Link -->
+        <button id="btnOpenSharePhone" onclick="openShareModal()"
+          class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-teal-300 hover:text-white border border-teal-500/30 transition text-xs font-semibold shadow-sm"
+          title="Buka dashboard ini di HP via Scan QR Code atau Salin Magic Link">
+          <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          <span>Buka di HP</span>
+        </button>
+
         <!-- Kelola Ruangan & Alat Button (Highlighted Action) -->
         <button id="btnOpenDeviceManager"
           class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-md shadow-teal-700/20 transition">
@@ -848,6 +859,23 @@
               deployments</strong> pada Google Apps Script.</p>
         </div>
 
+        <!-- Tombol Pintas: Buka di HP via Scan QR / Magic Link -->
+        <div
+          class="p-3.5 bg-gradient-to-r from-teal-500/15 via-slate-800/60 to-cyan-500/15 border border-teal-500/30 rounded-2xl flex items-center justify-between gap-3">
+          <div>
+            <div class="font-bold text-teal-300 flex items-center gap-1.5 text-xs">
+              <span>📱</span>
+              <span>Buka di HP (Scan QR &amp; Magic Link)</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Buka sekali di HP via QR Code, otomatis tersimpan selamanya.</div>
+          </div>
+          <button type="button" onclick="closeSettingsModal(); openShareModal();"
+            class="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs whitespace-nowrap shadow-md shadow-teal-700/20 transition flex items-center gap-1">
+            <span>Buka QR</span>
+            <span>&raquo;</span>
+          </button>
+        </div>
+
         <!-- Tombol Pintas: Buka Konfigurasi Per-Ruangan -->
         <div
           class="p-3.5 bg-gradient-to-r from-teal-500/15 via-teal-500/10 to-cyan-500/15 border border-teal-500/30 rounded-2xl flex items-center justify-between gap-3">
@@ -926,6 +954,78 @@
             Simpan Pengaturan
           </button>
         </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: BUKA DI HP (MAGIC LINK & SCAN QR CODE) -->
+  <!-- ===================================================================== -->
+  <div id="shareModal"
+    class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div
+      class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5 text-center">
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 text-left">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Buka Dashboard di HP</h3>
+            <p class="text-[11px] text-slate-400">Scan sekali, langsung terhubung selamanya</p>
+          </div>
+        </div>
+        <button onclick="closeShareModal()"
+          class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- QR Code Preview -->
+      <div class="space-y-3">
+        <div class="p-3 bg-white rounded-2xl inline-block shadow-2xl border-4 border-teal-500/20">
+          <img id="shareQrImage" src="" alt="QR Code Link HP" class="w-48 h-48 block mx-auto object-contain">
+        </div>
+        <p class="text-xs text-slate-300">
+          Arahkan <strong>Kamera HP</strong> Anda ke QR Code di atas untuk membuka dashboard secara instan tanpa perlu ketik URL lagi!
+        </p>
+      </div>
+
+      <!-- Magic Link Copy Box -->
+      <div class="space-y-2 text-left text-xs">
+        <label class="block text-slate-400 font-semibold text-[11px]">Atau Bagikan Tautan Magic Link:</label>
+        <div class="flex items-center gap-1.5">
+          <input type="text" id="shareMagicUrlInput" readonly
+            class="flex-1 px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-teal-300 font-mono text-[11px] select-all focus:outline-none">
+          <button onclick="copyMagicLink()" id="btnCopyMagicLink"
+            class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs whitespace-nowrap shadow-md shadow-teal-700/20 transition flex items-center gap-1">
+            <span>Salin Link</span>
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-400">
+          Kirim link ini ke WhatsApp HP Anda. Saat diklik, URL server otomatis tersimpan permanen di HP tersebut.
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="pt-2 flex items-center justify-between border-t border-slate-800 text-xs">
+        <a id="btnShareWhatsApp" href="#" target="_blank"
+          class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 font-semibold transition">
+          <span>Kirim ke WhatsApp</span>
+          <span>&raquo;</span>
+        </a>
+        <button onclick="closeShareModal()"
+          class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition">
+          Tutup
+        </button>
       </div>
 
     </div>
@@ -2895,6 +2995,57 @@
 
     function closeSettingsModal() {
       document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function openShareModal() {
+      if (!AppState.gasUrl) {
+        openSettingsModal();
+        showExportToast('Silakan atur URL Google Apps Script Anda terlebih dahulu.');
+        return;
+      }
+
+      const currentOrigin = window.location.origin;
+      const currentPath = window.location.pathname;
+      const magicUrl = `${currentOrigin}${currentPath}?gas=${encodeURIComponent(AppState.gasUrl)}`;
+
+      const inputEl = document.getElementById('shareMagicUrlInput');
+      if (inputEl) inputEl.value = magicUrl;
+
+      const qrImg = document.getElementById('shareQrImage');
+      if (qrImg) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(magicUrl)}`;
+      }
+
+      const waBtn = document.getElementById('btnShareWhatsApp');
+      if (waBtn) {
+        const textMsg = encodeURIComponent(`Halo, ini tautan langsung dashboard monitoring IoT EcoSense:\n${magicUrl}`);
+        waBtn.href = `https://api.whatsapp.com/send?text=${textMsg}`;
+      }
+
+      document.getElementById('shareModal').classList.remove('hidden');
+    }
+
+    function closeShareModal() {
+      const modal = document.getElementById('shareModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function copyMagicLink() {
+      const inputEl = document.getElementById('shareMagicUrlInput');
+      if (!inputEl) return;
+      inputEl.select();
+      inputEl.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(inputEl.value).then(() => {
+        const btn = document.getElementById('btnCopyMagicLink');
+        if (btn) btn.textContent = '✓ Tersalin!';
+        setTimeout(() => {
+          if (btn) btn.textContent = 'Salin Link';
+        }, 2000);
+        showExportToast('✓ Magic Link berhasil disalin ke clipboard!');
+      }).catch(() => {
+        document.execCommand('copy');
+        showExportToast('✓ Magic Link berhasil disalin!');
+      });
     }
 
     function saveSettings() {
