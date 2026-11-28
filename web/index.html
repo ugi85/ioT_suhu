@@ -88,48 +88,56 @@
     .pulse-ring-anim {
       animation: pulse-ring 2s infinite ease-in-out;
     }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
 </head>
 
 <body
-  class="bg-[#090d16] text-slate-100 min-h-screen font-sans antialiased flex flex-col justify-between selection:bg-teal-500 selection:text-white">
+  class="bg-[#090d16] text-slate-100 min-h-screen font-sans antialiased flex flex-col justify-between selection:bg-teal-500 selection:text-white overflow-x-hidden">
 
   <!-- ===================================================================== -->
   <!-- 1. TOP NAVBAR & REALTIME CLOCK -->
   <!-- ===================================================================== -->
   <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-xl sticky top-0 z-40 transition-all">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-3">
 
       <!-- Brand & Project Title -->
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1 sm:flex-initial">
         <div
-          class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 via-teal-400 to-cyan-400 flex items-center justify-center shadow-lg shadow-teal-500/25">
-          <svg class="w-5 h-5 text-slate-950 font-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-teal-500 via-teal-400 to-cyan-400 flex items-center justify-center shadow-lg shadow-teal-500/25 flex-shrink-0">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 text-slate-950 font-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-              <span>IoT EcoSense</span>
+        <div class="min-w-0">
+          <div class="flex items-center space-x-1.5">
+            <h1 class="text-sm sm:text-base font-black tracking-tight text-white whitespace-nowrap">
+              IoT EcoSense
             </h1>
             <span id="navSystemModeBadge"
-              class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">Multi-Room</span>
+              class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">Multi-Room</span>
           </div>
-          <div class="flex items-center space-x-2 text-[11px] text-slate-400">
-            <span id="navLiveClock" class="font-mono text-slate-300">--:--:-- WIB</span>
-            <span>&bull;</span>
-            <span id="navDeviceCountBadge" class="text-slate-400 font-semibold">Memeriksa status...</span>
+          <div class="flex items-center space-x-1.5 text-[10px] sm:text-[11px] text-slate-400 truncate">
+            <span id="navLiveClock" class="font-mono text-slate-300 whitespace-nowrap">--:--:-- WIB</span>
+            <span class="text-slate-600">&bull;</span>
+            <span id="navDeviceCountBadge" class="text-slate-400 font-semibold truncate">Memeriksa...</span>
           </div>
         </div>
       </div>
 
       <!-- Live Controls & Quick Actions -->
-      <div class="flex items-center space-x-2 sm:space-x-3">
+      <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
 
-        <!-- Live Connection Status Pill -->
+        <!-- Live Connection Status Pill (Desktop only) -->
         <div id="connectionStatusPill" onclick="openSettingsModal()"
-          class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs cursor-pointer hover:border-teal-500/60 hover:bg-slate-800 transition"
+          class="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs cursor-pointer hover:border-teal-500/60 hover:bg-slate-800 transition"
           title="Klik untuk melihat / mengubah URL Server Cloud Google Apps Script">
           <span class="relative flex h-2.5 w-2.5">
             <span id="statusPulseRing"
@@ -141,7 +149,7 @@
 
         <!-- Sync Countdown Badge -->
         <div id="syncCountdownBadge"
-          class="hidden md:flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-[11px] text-slate-400 font-mono"
+          class="hidden xl:flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-[11px] text-slate-400 font-mono"
           title="Waktu menuju polling data berikutnya">
           <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -150,9 +158,9 @@
           <span id="countdownSecondsText">30s</span>
         </div>
 
-        <!-- Pause / Resume Button -->
+        <!-- Pause / Resume Button (Desktop only) -->
         <button id="btnPauseResume"
-          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+          class="hidden sm:inline-flex p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
           title="Jeda / Lanjutkan Auto Refresh">
           <svg id="iconPause" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -169,7 +177,7 @@
 
         <!-- Manual Refresh Button -->
         <button id="btnManualRefresh"
-          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex-shrink-0"
           title="Refresh Data Sekarang">
           <svg id="iconRefresh" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -177,9 +185,9 @@
           </svg>
         </button>
 
-        <!-- Tombol Buka di HP / Scan QR Magic Link -->
+        <!-- Tombol Buka di HP / Scan QR Magic Link (Desktop only) -->
         <button id="btnOpenSharePhone" onclick="openShareModal()"
-          class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-teal-300 hover:text-white border border-teal-500/30 transition text-xs font-semibold shadow-sm"
+          class="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-teal-300 hover:text-white border border-teal-500/30 transition text-xs font-semibold shadow-sm"
           title="Buka dashboard ini di HP via Scan QR Code atau Salin Magic Link">
           <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -188,19 +196,20 @@
           <span>Buka di HP</span>
         </button>
 
-        <!-- Kelola Ruangan & Alat Button (Highlighted Action) -->
+        <!-- Kelola Ruangan & Alat Button (Icon only on mobile, text on md+) -->
         <button id="btnOpenDeviceManager"
-          class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-md shadow-teal-700/20 transition">
+          class="flex items-center space-x-1.5 px-2.5 py-2 sm:px-3.5 sm:py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-md shadow-teal-700/20 transition flex-shrink-0"
+          title="Kelola Ruangan & Alat">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
-          <span>Kelola Ruangan</span>
+          <span class="hidden md:inline">Kelola Ruangan</span>
         </button>
 
-        <!-- Settings Modal Button -->
+        <!-- Settings Modal Button (Selalu tampak di kanan, flex-shrink-0) -->
         <button id="btnOpenSettings"
-          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex-shrink-0"
           title="Pengaturan API & Batas Ambang">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -215,30 +224,30 @@
   <!-- ===================================================================== -->
   <!-- 2. ROOM SWITCHER & SUB-NAVIGATION -->
   <!-- ===================================================================== -->
-  <section class="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-2.5">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+  <section class="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-3 sm:px-6 lg:px-8 py-2">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3">
 
       <!-- Room Tabs / Selector -->
-      <div class="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0 text-xs">
+      <div class="flex items-center space-x-2 overflow-x-auto pb-0.5 sm:pb-0 text-xs no-scrollbar">
         <span id="labelRoomNav" class="text-slate-400 font-semibold whitespace-nowrap hidden md:inline">Tampilan Ruangan:</span>
 
         <!-- Tab: Semua Ruangan (Overview Grid) -->
         <button onclick="selectRoom('all')" id="tabRoom_all"
-          class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 whitespace-nowrap shadow-sm">
+          class="px-3 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 whitespace-nowrap shadow-sm text-xs flex-shrink-0">
           <span>🏢</span>
           <span>Semua Ruangan</span>
           <span id="badgeAllRoomCount" class="px-1.5 py-0.2 bg-teal-400/20 rounded-full text-[10px]">1</span>
         </button>
 
         <!-- Dynamic Device / Room Pills Generated via JS -->
-        <div id="dynamicRoomTabs" class="flex items-center space-x-2">
+        <div id="dynamicRoomTabs" class="flex items-center space-x-2 flex-shrink-0">
           <!-- e.g. Ruang Server, Ruang Lab, Ruang Kantor -->
         </div>
       </div>
 
       <!-- Quick Room Actions -->
       <div class="flex items-center space-x-2 text-xs">
-        <span id="activeRoomIndicator" class="text-slate-400">Mode: <strong class="text-white">Overview Semua
+        <span id="activeRoomIndicator" class="text-slate-400 text-[11px] sm:text-xs">Mode: <strong class="text-white">Overview Semua
             Ruangan</strong></span>
       </div>
 
@@ -1201,13 +1210,13 @@
           navBadge.className = 'text-slate-500 font-semibold';
         } else if (totalDevs === 1) {
           const dev = AppState.devices[0];
-          navBadge.textContent = dev.is_online ? `1 Alat Online (${dev.name || dev.device_id})` : `1 Alat Offline`;
+          navBadge.textContent = dev.is_online ? `1 Online` : `1 Offline`;
           navBadge.className = dev.is_online ? 'text-teal-400 font-semibold' : 'text-amber-400 font-semibold';
         } else if (onlineDevs === 0) {
-          navBadge.textContent = `0/${totalDevs} Ruangan Online (Alat Offline)`;
+          navBadge.textContent = `0/${totalDevs} Online`;
           navBadge.className = 'text-amber-400 font-semibold';
         } else {
-          navBadge.textContent = `${onlineDevs}/${totalDevs} Ruangan Online`;
+          navBadge.textContent = `${onlineDevs}/${totalDevs} Online`;
           navBadge.className = 'text-teal-400 font-semibold';
         }
       }
@@ -1269,7 +1278,7 @@
           : 'bg-slate-800/80 text-slate-300 hover:text-white border-slate-700/80';
 
         html += `
-          <button onclick="selectRoom('${dev.device_id}')" id="tabRoom_${dev.device_id}" class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 border whitespace-nowrap ${activeClass}">
+          <button onclick="selectRoom('${dev.device_id}')" id="tabRoom_${dev.device_id}" class="px-3 py-1.5 rounded-xl font-bold transition flex items-center space-x-1.5 border whitespace-nowrap text-xs flex-shrink-0 ${activeClass}">
             <span class="w-2 h-2 rounded-full ${onlineClass}"></span>
             <span>${dev.name || dev.device_id}</span>
           </button>
