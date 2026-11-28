@@ -1,6 +1,8 @@
 # IoT EcoSense - Multi-Room Realtime Temperature & Humidity Monitoring
 
-Sistem IoT Terpadu Pemantauan Suhu & Kelembaban Udara Multi-Ruangan Real-Time berbasis **ESP32 / ESP32-S3**, **Google Apps Script & Google Spreadsheet**, serta **Modern Web Dashboard (Tailwind CSS & Chart.js)**.
+> 📖 **Panduan Pembeli / Konsumen:** Untuk buku petunjuk aktivasi langkah demi langkah bagi pembeli/pengguna akhir, silakan baca [PANDUAN_PENGGUNA.md](file:///c:/Users/bakekok/Desktop/project%20EkaCs/PANDUAN_PENGGUNA.md).
+
+Sistem IoT Terpadu Pemantauan Suhu & Kelembaban Udara Multi-Ruangan Real-Time berbasis **ESP32 / ESP32-S3 / ESP8266**, **Google Apps Script & Google Spreadsheet**, serta **Modern Web Dashboard (Tailwind CSS & Chart.js)**.
 
 ---
 

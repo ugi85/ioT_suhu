@@ -20,6 +20,10 @@ const DEVICE_SHEET_NAME = "DeviceConfig";
 const TIMEZONE          = "Asia/Jakarta";
 const DATE_FORMAT       = "yyyy-MM-dd HH:mm:ss";
 
+// Konfigurasi Kapasitas Database & Auto-FIFO Rotation (Circular Buffer)
+const MAX_STORAGE_ROWS  = 10000; // Batas maksimal baris per-sheet (10.000 baris riwayat data)
+const BATCH_PURGE_ROWS  = 500;   // Hapus 500 baris terlama sekaligus saat penuh (Super cepat & hemat kuota eksekusi)
+
 // Ambang batas standar default jika belum diatur secara spesifik
 const DEFAULT_CONFIG = {
   send_interval_sec: 10,
@@ -202,6 +206,13 @@ function doGet(e) {
         message: "Belum ada data sensor yang tersimpan.",
         latest: null,
         data: [],
+        total_rows: 0,
+        storage: {
+          total_rows: 0,
+          max_rows: MAX_STORAGE_ROWS,
+          usage_percent: 0.0,
+          is_auto_rotate_active: true
+        },
         devices: devicesList,
         config: activeConfig
       });
@@ -216,16 +227,25 @@ function doGet(e) {
       status: String(latestRowValues[4])
     };
 
+    const totalDataRows = lastRow - 1;
+    const storageInfo = {
+      total_rows: totalDataRows,
+      max_rows: MAX_STORAGE_ROWS,
+      usage_percent: Math.min(100, parseFloat(((totalDataRows / MAX_STORAGE_ROWS) * 100).toFixed(1))),
+      is_auto_rotate_active: true
+    };
+
     if (action === "latest") {
       return createJsonResponse({
         status: "success",
         data: latestData,
+        total_rows: totalDataRows,
+        storage: storageInfo,
         devices: devicesList,
         config: activeConfig
       });
     }
 
-    const totalDataRows = lastRow - 1;
     const rowsToFetch   = Math.min(limit, totalDataRows);
     const startRow      = lastRow - rowsToFetch + 1;
 
@@ -244,6 +264,8 @@ function doGet(e) {
       return createJsonResponse({
         status: "success",
         count: historyData.length,
+        total_rows: totalDataRows,
+        storage: storageInfo,
         data: historyData,
         devices: devicesList,
         config: activeConfig
@@ -255,6 +277,8 @@ function doGet(e) {
       status: "success",
       latest: latestData,
       count: historyData.length,
+      total_rows: totalDataRows,
+      storage: storageInfo,
       data: historyData,
       devices: devicesList,
       config: activeConfig
@@ -346,6 +370,9 @@ function processIncomingTelemetry(params) {
     sheet.getRange(newRowIndex, 5).setBackground("#fef2f2").setFontColor("#dc2626");
   }
 
+  // AUTO-FIFO ROTATION: Jaga agar ukuran spreadsheet tetap optimal & tidak pernah penuh
+  enforceStorageAutoRotation(sheet);
+
   // OTOMATIS PISAH TAB SHEET PER-RUANGAN DI SPREADSHEET YANG SAMA (1 FILE, 1 URL)
   logToDedicatedRoomSheet(rawDeviceId, devConfig.name, rowValues);
 
@@ -417,21 +444,6 @@ function getOrCreateDeviceConfigSheet() {
     sheet.setColumnWidth(9, 90);  // Last Temp
     sheet.setColumnWidth(10, 90); // Last Hum
     sheet.setColumnWidth(11, 180);// Last Status
-
-    // Inisialisasi awal perangkat aktif jika ada di DataLog
-    sheet.appendRow([
-      "ROOM_Server01",
-      "Ruang Server",
-      10,
-      18.0,
-      30.0,
-      40.0,
-      70.0,
-      Utilities.formatDate(new Date(), TIMEZONE, DATE_FORMAT),
-      "-",
-      "-",
-      "Ready"
-    ]);
   }
   return sheet;
 }
@@ -795,8 +807,33 @@ function logToDedicatedRoomSheet(deviceId, deviceName, rowValues) {
     if (rowValues[4] !== "Normal") {
       roomSheet.getRange(roomSheet.getLastRow(), 6).setBackground("#fef2f2").setFontColor("#dc2626");
     }
+
+    // AUTO-FIFO ROTATION untuk tab per-ruangan
+    enforceStorageAutoRotation(roomSheet);
   } catch (err) {
     // Non-blocking jika terjadi kendala pada tab per-ruangan
+  }
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * Helper: Auto-FIFO Circular Buffer (Auto-Rotate Data Terlama)
+ * Menjaga spreadsheet tetap ringan, cepat, dan tidak pernah melebihi kuota.
+ * Saat baris melebihi MAX_STORAGE_ROWS, sistem otomatis menghapus batch
+ * data terlama (mulai baris 2) sehingga data baru selalu bisa masuk 24/7.
+ * --------------------------------------------------------------------------
+ */
+function enforceStorageAutoRotation(targetSheet) {
+  try {
+    const lastRow = targetSheet.getLastRow();
+    // Jika baris (di luar header baris 1) melebihi batas maksimal
+    if (lastRow > (MAX_STORAGE_ROWS + 1)) {
+      const rowsToDelete = Math.min(BATCH_PURGE_ROWS, lastRow - 1);
+      // Hapus batch dari baris 2 (data terlama tepat di bawah header)
+      targetSheet.deleteRows(2, rowsToDelete);
+    }
+  } catch (err) {
+    console.warn("Gagal eksekusi auto-rotation pada sheet: " + err.toString());
   }
 }
 
