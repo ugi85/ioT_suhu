@@ -97,19 +97,29 @@ Untuk menampung data sensor, Anda cukup membuat salinan template database Google
 
 Semua konsumen menggunakan **1 alamat link website dashboard utama yang sama**, namun masing-masing hanya akan melihat data dari alat miliknya sendiri:
 
-### Cara Praktis 1: Menggunakan Magic Link (Sangat Disarankan)
+> **PENTING: Apakah setiap perangkat (Laptop / HP) harus memasukkan URL?**  
+> * **HANYA 1 KALI SAJA per perangkat.** Begitu tersimpan, browser di perangkat tersebut akan mengingatnya selamanya. Anda tidak perlu memasukkan URL lagi saat membukanya di kemudian hari.  
+> * Jika Anda ingin membuka di HP tanpa perlu mengetik/copy URL yang panjang, gunakan **Scan QR Code** atau **Magic Link** di bawah ini!
+
+### Cara 1: Scan QR Code dari Laptop ke HP (Paling Cepat & Mudah)
+1. Di laptop yang sudah terhubung, klik tombol **`📱 Buka di HP`** di bagian atas (atau di menu Pengaturan).
+2. Sebuah **QR Code** akan muncul di layar laptop.
+3. Buka **Kamera HP** Anda dan arahkan ke layar laptop.
+4. Klik tautan yang muncul di HP Anda. Dashboard langsung terbuka dan otomatis tersimpan permanen di HP Anda!
+
+### Cara 2: Menggunakan Magic Link 1-Klik (WhatsApp / Chat)
 Cukup buka tautan di browser Anda dengan menyertakan URL server Anda di bagian belakang:
 ```text
 https://[ALAMAT-WEB-DASHBOARD-ANDA]/?gas=[TEMPEL_URL_WEB_APP_ANDA_DI_SINI]
 ```
-*Sistem web akan otomatis mengenali, menyimpan ke memori browser Anda, dan langsung menampilkan grafik data ruangan Anda!*
+*Kirim link ini ke WhatsApp HP Anda. Saat diklik sekali di HP, sistem web langsung mengenali, menyimpannya permanen di HP, dan data Anda langsung tampil!*
 
-### Cara Praktis 2: Melalui Menu Pengaturan Web Manual
+### Cara 3: Melalui Menu Pengaturan Web Manual
 1. Buka link web dashboard: `https://[ALAMAT-WEB-DASHBOARD-ANDA]`.
-2. Saat pertama kali dibuka, web akan menampilkan status kuning: **"Server Belum Diatur"** dan otomatis membuka jendela pengaturan.
+2. Saat pertama kali dibuka di perangkat baru, web akan menampilkan status kuning: **"Server Belum Diatur"** dan otomatis membuka jendela pengaturan.
 3. Tempelkan URL Web App Anda ke dalam kotak **Google Apps Script Web App URL**.
 4. Klik tombol **Simpan Pengaturan**.
-5. Status di pojok kanan atas akan berubah menjadi hijau: **Cloud Sync (Live)** dan data Anda langsung dimuat.
+5. Status di pojok kanan atas akan berubah menjadi hijau: **Cloud Sync (Live)** dan data Anda langsung dimuat selamanya.
 
 ---
 
